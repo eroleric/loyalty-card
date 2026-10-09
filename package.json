@@ -1,0 +1,11 @@
+{
+  "name": "loyalty-card",
+  "version": "0.1.0",
+  "private": true,
+  "description": "UI-only Loyalty Card home screen, starting with Circle K.",
+  "type": "module",
+  "scripts": {
+    "dev": "node serve.mjs",
+    "check": "node --check dist/app.js && node --check dist/retailers.js && node --check serve.mjs"
+  }
+}

@@ -1,0 +1,94 @@
+:root {
+  color-scheme: light;
+  font-family: "Aptos", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #25332e;
+  background: #f7f8f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; }
+svg { display: block; }
+.skip-link { position: absolute; left: 24px; top: -80px; z-index: 5; padding: 12px 18px; color: white; background: #263d30; border-radius: 8px; }
+.skip-link:focus { top: 16px; }
+.app-header { border-bottom: 1px solid #e4e8e0; background: #fffefa; }
+.header-content { max-width: 1120px; margin: auto; padding: 25px 40px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 11px; font-size: 20px; font-weight: 700; letter-spacing: -.65px; }
+.brand-icon { width: 38px; height: 38px; display: grid; place-items: center; background: #263d30; border-radius: 12px; color: #eff5d9; }
+.brand-icon svg { width: 24px; stroke: currentColor; stroke-width: 1.6; }
+.home-indicator { display: flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #526449; background: #edf2e6; }
+.home-indicator > span { width: 6px; height: 6px; border-radius: 50%; background: #6a8556; }
+.main-content { max-width: 1120px; min-height: calc(100svh - 176px); margin: auto; padding: 58px 40px 72px; }
+.welcome { position: relative; display: grid; grid-template-columns: 1.5fr 1fr; align-items: center; gap: 20px; min-height: 246px; padding-bottom: 35px; }
+.eyebrow { margin: 0 0 19px; font-size: 10px; font-weight: 700; letter-spacing: 2.2px; color: #74806e; }
+h1 { margin: 0; font-size: clamp(33px, 4.2vw, 50px); line-height: 1.12; letter-spacing: -2.1px; font-weight: 650; }
+.welcome-description { margin: 20px 0 0; font-size: 15px; line-height: 1.6; color: #7b8177; }
+.wallet-art { position: relative; justify-self: center; width: 295px; height: 229px; }
+.art-orbit { position: absolute; width: 212px; height: 212px; left: 45px; top: 5px; border: 1px solid #e0e6d8; border-radius: 50%; }
+.art-card { position: absolute; width: 220px; height: 137px; border-radius: 17px; }
+.art-card-back { top: 22px; left: 31px; transform: rotate(-12deg); background: #dfe8c7; border: 1px solid #d2ddb7; }
+.art-chip { position: absolute; top: 20px; left: 20px; width: 28px; height: 22px; border-radius: 6px; background: #cad7a8; }
+.art-card-front { top: 69px; left: 57px; transform: rotate(7deg); padding: 21px; color: #f2f7e8; background: #304a38; box-shadow: 0 15px 26px -16px #304a3866; }
+.art-card-title { font-size: 16px; letter-spacing: -.45px; font-weight: 600; }
+.art-card-icon { position: absolute; right: 18px; top: 15px; width: 32px; stroke: #bdd098; stroke-width: 1.3; }
+.art-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 48px; }
+.art-card-bottom > span:first-child { font-size: 7px; letter-spacing: 1.8px; color: #bbcaa9; }
+.art-card-dot { width: 15px; height: 15px; border: 1px solid #aabd8d; border-radius: 50%; }
+.art-spark { position: absolute; color: #94a777; }
+.art-spark-one { top: 42px; right: 0; font-size: 25px; }
+.art-spark-two { bottom: 30px; left: 0; font-size: 16px; }
+.retailer-section { margin-top: 21px; }
+.section-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 25px; }
+.section-eyebrow { font-size: 9px; letter-spacing: 1.8px; margin-bottom: 9px; }
+h2 { display: flex; align-items: center; gap: 11px; font-size: 24px; font-weight: 600; letter-spacing: -.65px; line-height: 1.2; margin: 0; }
+.count-badge { min-width: 24px; height: 24px; display: inline-grid; place-items: center; padding: 0 7px; border-radius: 7px; background: #e9ede3; color: #75836b; font-size: 11px; font-weight: 600; letter-spacing: 0; }
+.retailer-summary { padding-bottom: 2px; font-size: 12px; color: #8c9186; }
+.retailer-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+.retailer-grid > li { min-width: 0; }
+.retailer-card { overflow: hidden; border-radius: 19px; background: #fffefa; border: 1px solid #e5e8df; box-shadow: 0 5px 15px -12px #263d303b; }
+.retailer-cover { position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; height: 167px; isolation: isolate; overflow: hidden; color: white; background: var(--retailer-color); }
+.retailer-monogram { display: inline-grid; place-items: center; width: 57px; height: 57px; border: 1px solid #ffffff70; border-radius: 15px; background: #ffffff0d; font-size: 23px; font-weight: 700; letter-spacing: -1px; }
+.cover-name { font-size: 31px; font-weight: 700; letter-spacing: -1.4px; }
+.cover-ring { position: absolute; z-index: -1; width: 205px; height: 205px; top: -119px; right: -75px; border: 27px solid #ffffff0b; border-radius: 50%; }
+.cover-ring-small { width: 166px; height: 166px; top: auto; bottom: -123px; right: auto; left: -45px; border-width: 23px; }
+.retailer-details { padding: 24px; }
+.retailer-name-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+h3 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -.65px; }
+.retailer-tag { padding: 5px 8px; font-size: 9px; font-weight: 500; color: #8f544e; background: var(--retailer-tint); border-radius: 6px; white-space: nowrap; }
+.retailer-program { margin: 7px 0 0; font-size: 13px; color: #82867c; }
+.retailer-footer { margin-top: 23px; padding-top: 17px; border-top: 1px solid #edf0e7; display: flex; align-items: center; gap: 7px; font-size: 11px; color: #828a7b; }
+.retailer-footer svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.2; }
+.app-footer { max-width: 1120px; margin: auto; padding: 23px 40px; display: flex; justify-content: space-between; align-items: center; gap: 15px; border-top: 1px solid #e4e8e0; color: #8f9589; font-size: 11px; }
+.app-footer > span:first-child { font-weight: 600; }
+
+@media (max-width: 700px) {
+  .header-content { padding: 20px 24px; }
+  .main-content { padding: 39px 24px 52px; }
+  .welcome { grid-template-columns: 1fr; padding-bottom: 5px; gap: 20px; }
+  h1 { font-size: 38px; letter-spacing: -1.7px; }
+  .welcome-description { font-size: 14px; margin-top: 16px; }
+  .wallet-art { width: 295px; height: 190px; transform: scale(.88); transform-origin: center center; margin: -2px 0 0; }
+  .art-card-front { top: 50px; }
+  .art-card-back { top: 8px; }
+  .art-orbit { width: 190px; height: 190px; top: -8px; left: 56px; }
+  .art-spark-one { top: 24px; }
+  .art-spark-two { bottom: 27px; }
+  .retailer-section { margin-top: 15px; }
+  .section-heading { padding-bottom: 20px; }
+  .retailer-grid { gap: 20px; }
+  .retailer-cover { height: 160px; }
+  .app-footer { padding: 22px 24px; }
+}
+
+@media (max-width: 350px) {
+  .header-content, .app-footer { padding-left: 18px; padding-right: 18px; }
+  .brand { font-size: 18px; gap: 9px; }
+  .home-indicator { padding: 8px 12px; }
+  .main-content { padding-left: 18px; padding-right: 18px; }
+  h1 { font-size: 33px; }
+  .wallet-art { width: 245px; transform: scale(.8); margin-left: -15px; }
+  .retailer-details { padding: 20px; }
+  .cover-name { font-size: 28px; }
+}
