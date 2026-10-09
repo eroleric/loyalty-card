@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f8f4" />
+    <meta name="description" content="Loyalty Card — your favorite retailers, together in one place." />
+    <title>Loyalty Card</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to retailers</a>
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="M3.5 10h17M7.5 14.5h3"/></svg>
+          </span>
+          <span>Loyalty Card</span>
+        </div>
+        <span class="home-indicator"><span aria-hidden="true"></span>Home</span>
+      </div>
+    </header>
+
+    <main id="main" class="main-content">
+      <section class="welcome" aria-labelledby="welcome-title">
+        <div class="welcome-copy">
+          <p class="eyebrow">A LITTLE LESS TO CARRY</p>
+          <h1 id="welcome-title">Your favorite stores.<br />One simple place.</h1>
+          <p class="welcome-description">Keep your everyday retailers close at hand.</p>
+        </div>
+        <div class="wallet-art" aria-hidden="true">
+          <div class="art-orbit"></div>
+          <div class="art-card art-card-back"><span class="art-chip"></span></div>
+          <div class="art-card art-card-front">
+            <span class="art-card-title">Loyalty Card</span>
+            <svg class="art-card-icon" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="17" rx="4"/><path d="M4 14h24M9 20h5"/></svg>
+            <div class="art-card-bottom"><span>EVERYDAY FAVORITES</span><span class="art-card-dot"></span></div>
+          </div>
+          <span class="art-spark art-spark-one">✦</span>
+          <span class="art-spark art-spark-two">✦</span>
+        </div>
+      </section>
+
+      <section class="retailer-section" aria-labelledby="retailers-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow section-eyebrow">YOUR EVERYDAY STOPS</p>
+            <h2 id="retailers-title">Retailers <span id="retailer-count" class="count-badge">1</span></h2>
+          </div>
+          <span id="retailer-summary" class="retailer-summary">1 retailer</span>
+        </div>
+        <ul id="retailer-grid" class="retailer-grid" aria-label="Retailers">
+          <li>
+            <article class="retailer-card" style="--retailer-color: #d83632; --retailer-tint: #fbe9e7" aria-labelledby="circle-k-name">
+              <div class="retailer-cover" aria-hidden="true"><span class="cover-ring"></span><span class="cover-ring cover-ring-small"></span><span class="retailer-monogram">CK</span><span class="cover-name">Circle K</span></div>
+              <div class="retailer-details"><div class="retailer-name-row"><h3 id="circle-k-name">Circle K</h3><span class="retailer-tag">Convenience &amp; fuel</span></div><p class="retailer-program">Inner Circle</p><div class="retailer-footer"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><rect x="3" y="5" width="14" height="11" rx="2.5"/><path d="M3 8.5h14M6 12h3"/></svg><span>Loyalty program</span></div></div>
+            </article>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="app-footer"><span>Loyalty Card</span><span>Your retailers, together.</span></footer>
+  </body>
+</html>
