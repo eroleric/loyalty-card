@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AccountProfiles, validateAccountConfig, createSessionStorage, accountError, validateCloudRecord } from "../dist/account.js";
+import { AccountProfiles, validateAccountConfig, createSessionStorage, accountError, validateCloudRecord, isEmailLinkCallback, cleanEmailLinkUrl } from "../dist/account.js";
 import { emptyProfile } from "../dist/profile.js";
 
 const userA = { id: "11111111-1111-4111-8111-111111111111", email: "taylor@example.com" };
@@ -30,6 +30,16 @@ test("disabled setup sends no account requests; enabled setup rejects server key
   assert.equal(validateAccountConfig(config), true);
   for (const url of ["http://example.supabase.co", "https://example.supabase.co.attacker.com", "https://user:pass@example.supabase.co", "https://example.supabase.co?token=secret"]) assert.throws(() => validateAccountConfig({ ...config, supabaseUrl: url }));
   for (const key of ["sb_secret_example", "service_role", "eyJhbGciOiJIUzI1NiJ9.payload.signature"]) assert.throws(() => validateAccountConfig({ ...config, publishableKey: key }));
+  assert.equal(validateAccountConfig({ ...config, emailSignIn: "link" }), true);
+  assert.throws(() => validateAccountConfig({ ...config, emailSignIn: "unsupported" }));
+});
+
+test("email return links are recognized and auth parameters are removed without dropping ordinary query parameters", () => {
+  const href = "https://example.com/loyalty-card/?view=test&error=bad&error_description=private#access_token=fake&refresh_token=fake";
+  assert.equal(isEmailLinkCallback(href), true);
+  assert.equal(cleanEmailLinkUrl(href), "/loyalty-card/?view=test");
+  assert.equal(isEmailLinkCallback("https://example.com/loyalty-card/#account"), false);
+  assert.equal(isEmailLinkCallback("https://example.com/loyalty-card/#error_code=otp_expired"), true);
 });
 
 test("load, save and delete are scoped to the active account and saves allowlist fields", async () => {

@@ -8,7 +8,21 @@ export function validateAccountConfig(config) {
   if (url.protocol !== "https:" || !/^[a-z0-9]+\.supabase\.co$/.test(url.hostname) || url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new Error("Account setup is incomplete.");
   // Restrict to the modern browser-safe key; never accept a server key or JWT.
   if (typeof config.publishableKey !== "string" || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey)) throw new Error("A public publishable key is required.");
+  if (config.emailSignIn !== undefined && !["code", "link"].includes(config.emailSignIn)) throw new Error("Unsupported email sign-in method.");
   return true;
+}
+
+export function isEmailLinkCallback(href) {
+  const url = new URL(href);
+  const hash = new URLSearchParams(url.hash.slice(1));
+  return ["access_token", "error", "error_code"].some(key => hash.has(key) || url.searchParams.has(key));
+}
+
+export function cleanEmailLinkUrl(href) {
+  const url = new URL(href);
+  for (const key of ["access_token", "refresh_token", "provider_token", "provider_refresh_token", "expires_in", "expires_at", "token_type", "error", "error_code", "error_description"]) url.searchParams.delete(key);
+  url.hash = "";
+  return `${url.pathname}${url.search}`;
 }
 
 export function createSessionStorage(storage, { runtimeKey, storageKey } = {}) {

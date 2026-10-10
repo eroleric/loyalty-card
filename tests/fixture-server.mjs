@@ -18,7 +18,7 @@ const users = [
 ].map(user => ({ ...user, aud: "authenticated", role: "authenticated", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, created_at: "2026-10-10T12:00:00Z" }));
 for (const user of users) await db.query("insert into auth.users values ($1)", [user.id]);
 const tokens = new Map();
-let cloud = true, failLoad = false, failSave = false;
+let cloud = true, failLoad = false, failSave = false, emailSignIn = "code";
 let serial = Promise.resolve();
 function json(response, status, value) { response.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(JSON.stringify(value)); }
 function session(user) {
@@ -36,10 +36,18 @@ http.createServer(async (request, response) => {
       if (typeof value.cloud === "boolean") cloud = value.cloud;
       if (typeof value.failLoad === "boolean") failLoad = value.failLoad;
       if (typeof value.failSave === "boolean") failSave = value.failSave;
-      json(response, 200, { cloud, failLoad, failSave }); return;
+      if (["code", "link"].includes(value.emailSignIn)) emailSignIn = value.emailSignIn;
+      json(response, 200, { cloud, failLoad, failSave, emailSignIn }); return;
+    }
+    if (url.pathname === "/__fixture/link") {
+      const user = users.find(user => user.email === url.searchParams.get("email"));
+      if (!user) { json(response, 400, { message: "Use a fictional fixture account." }); return; }
+      const value = session(user);
+      const hash = new URLSearchParams({ access_token: value.access_token, refresh_token: value.refresh_token, expires_in: "3600", token_type: "bearer", type: "magiclink" });
+      response.writeHead(302, { Location: `/#${hash}`, "Cache-Control": "no-store" }).end(); return;
     }
     if (url.pathname === "/config.js") {
-      response.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }).end(`export const accountConfig={enabled:${cloud},supabaseUrl:"https://localtest.supabase.co",publishableKey:"sb_publishable_local_test_only"};`); return;
+      response.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }).end(`export const accountConfig={enabled:${cloud},supabaseUrl:"https://localtest.supabase.co",publishableKey:"sb_publishable_local_test_only",emailSignIn:"${emailSignIn}",testEmailOnly:true};`); return;
     }
     if (url.pathname === "/vendor/supabase.js") {
       response.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-store" }).end('import {createClient as realClient} from "./supabase-real.js";export function createClient(url,key,options){return realClient(location.origin,key,options)}'); return;

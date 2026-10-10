@@ -66,3 +66,20 @@ test("database enforces private CRUD, owner boundaries, and server validation", 
     assert.equal((await db.query("select * from public.loyalty_profiles")).rows.length, 0);
   } finally { await db.close(); }
 });
+
+test("hosted verification script checks permissions and rolls back its fictional records", async () => {
+  const db = await PGlite.create();
+  try {
+    await db.exec(`create role anon; create role authenticated;
+      create schema auth; create table auth.users (id uuid primary key);
+      create function auth.uid() returns uuid language sql stable as
+        'select nullif(current_setting(''request.jwt.claim.sub'', true), '''')::uuid';
+      grant usage on schema public, auth to anon, authenticated;
+      grant execute on function auth.uid() to authenticated;`);
+    await db.exec(await readFile(new URL("../supabase/migrations/202610100001_private_profiles.sql", import.meta.url), "utf8"));
+    const results = await db.exec(await readFile(new URL("../supabase/verify_private_profiles.sql", import.meta.url), "utf8"));
+    assert.match(results.at(-1).rows[0].verification, /^PASS:/);
+    assert.equal((await db.query("select count(*)::int as count from auth.users")).rows[0].count, 0);
+    assert.equal((await db.query("select count(*)::int as count from public.loyalty_profiles")).rows[0].count, 0);
+  } finally { await db.close(); }
+});

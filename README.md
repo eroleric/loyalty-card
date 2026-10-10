@@ -1,6 +1,6 @@
 # Loyalty Card
 
-A responsive loyalty UI with Circle K as its only retailer, reusable signup details, and an email-account integration for Supabase.
+A responsive loyalty UI with Circle K as its only retailer, reusable signup details, and a prototype email-account integration for Supabase.
 
 Source repository: https://github.com/eroleric/loyalty-card
 
@@ -12,7 +12,7 @@ Source repository: https://github.com/eroleric/loyalty-card
 - Partial profile saving, format validation, editing, cancellation, common-field progress, and deletion.
 - Reusable signup-review preview, showing the saved profile without sending it anywhere. Signup is explicitly unavailable.
 - Page-memory storage by default. Browser storage is explicitly opt-in and can be turned off to remove a remembered copy.
-- Account screen with email codes, sign-out, loading/retry states, and private profile CRUD. **Live accounts are not activated yet:** `dist/config.js` has `enabled: false` until a real project and email delivery are configured and tested. While disabled, the existing browser-profile behavior remains available.
+- Account screen with email links or codes, sign-out, loading/retry states, and private profile CRUD. **Live accounts are not activated yet:** `dist/config.js` has `enabled: false`. The prototype uses default Supabase sign-in links, avoiding an extra email-service setup for initial team testing. While disabled, the existing browser-profile behavior remains available.
 - Once enabled, profile saving requires sign-in and a successful initial load. Existing browser details are only uploaded after explicit review and Save profile; the old copy can be removed separately.
 - No retailer signup, autofill, payments, point balances, or retailer connections.
 - A responsive grid renders the full retailer list. No fixed retailer limit or hard-coded card slots.
@@ -53,13 +53,15 @@ GitHub project sites share the `eroleric.github.io` origin. Other scripts runnin
 
 ## Activate hosted accounts
 
-1. Connect a dedicated Supabase project owned by the app operator. Apply the migration before enabling the frontend. The table is `public.loyalty_profiles`, keyed by `auth.users.id`, with cascading removal when a user is deleted.
-2. Configure Email Auth and the Magic Link email template to send a code: `<h2>Your Loyalty Card sign-in code</h2><p>{{ .Token }}</p>`. This UI uses `signInWithOtp` followed by `verifyOtp({ type: "email" })`; it does not consume magic-link redirects or collect passwords. Keep provider verification/rate limits enabled.
-3. Configure an email sending service (custom SMTP) before letting customers sign in. Supabase's default email service is for testing with project-team addresses and has restrictive limits; it cannot onboard arbitrary customers. See the [official SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp) and [email OTP documentation](https://supabase.com/docs/guides/auth/auth-email-passwordless).
-4. Check the hosted API with two disposable users and an anonymous request: own read/write/delete succeeds, foreign access and anonymous access fail, invalid profile data fails, and account switching/sign-out clears visible details. Verify real code delivery for an allowed test account.
+1. Use the dedicated Supabase project owned by the app operator. Apply the migration before enabling the frontend. The table is `public.loyalty_profiles`, keyed by `auth.users.id`, with cascading removal when a user is deleted. The operator most recently selected "Leave database unchanged"; the migration has been staged for review but has not been run.
+2. For the prototype, keep the default Email Auth templates and set the Site URL to `https://eroleric.github.io/loyalty-card/`. `emailSignIn: "link"` uses `signInWithOtp` with that return URL, then the SDK consumes the implicit email callback. Callback tokens/errors are removed from the URL before routing to Account. No passwords are collected. Keep provider verification/rate limits enabled.
+3. Supabase's default email service is restricted to project-team email addresses and has restrictive delivery limits. That is sufficient only for initial owner/team tests; do not invite arbitrary customers. A custom SMTP service is deferred until wider testing. See the [official SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp) and [passwordless email documentation](https://supabase.com/docs/guides/auth/auth-email-passwordless). To return to numeric codes later, configure the email template to include `{{ .Token }}` and set `emailSignIn: "code"`.
+4. Run `supabase/verify_private_profiles.sql` on the hosted database, check an anonymous API request, then verify real link delivery and sign-in for an allowed test account. Own read/write/delete must succeed, foreign and anonymous access must fail, invalid profile data must fail, and sign-out must clear visible details.
 5. Set the project's HTTPS URL and modern `sb_publishable_...` key in `dist/config.js`, then enable and publish. These are public browser settings; service-role keys, secret keys, database passwords, SMTP secrets, and management tokens must never enter `dist/` or the repository. `.env` files are ignored.
 
-Hosted provisioning, SMTP configuration, and live end-to-end checks remain outstanding while Supabase is unconnected. The local SQL and synthetic browser checks are not substitutes for these activation checks.
+The dedicated project `jxkdcwqezmtkuyvxvben` now exists in the free Loyalty Card organization. Its initial database inspection showed zero public tables and zero app users. Public connection settings are present in `dist/config.js`, but account activation remains disabled. Installing the private table, setting the return URL, and hosted access/email checks remain outstanding. SMTP and paid template editing are deferred for this prototype; no paid upgrade has been selected.
+
+`supabase/verify_private_profiles.sql` is a hosted SQL verification workflow with two fictional users. It checks actual database roles, per-user access, CRUD, anonymous denial, timestamps, and invalid data, then rolls back all test changes. It does not prove email delivery, JWT issuance, or a complete browser login. The script is checked locally on PGlite before use on the hosted database. A real email sign-in remains a separate activation check.
 
 `schemaVersion: 1` fields are retailer-neutral. Nine common fields are a completeness guide only; the profile permits partial saves. `fieldsForReview(profile, requestedFields)` builds an allowlisted review snapshot and rejects unknown fields or preferences. The current preview shows the whole saved profile and clearly does not claim to match Circle K's requested fields. Each future adapter must define its own requested fields, validation and verification needs, then show the user the exact data to share and obtain retailer-specific consent. Offer preferences do not grant consent. Email/phone format checks do not verify ownership, address validity, or age.
 
