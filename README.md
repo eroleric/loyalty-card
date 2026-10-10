@@ -29,6 +29,10 @@ This is a browser UI prototype, not a compiled iOS or Android app.
 
 ## GitHub Pages
 
-The website files in `dist/` can be published to the root of the `gh-pages` branch. GitHub Pages should use that branch and the `/` folder. Relative asset links support the `/loyalty-card/` project URL.
+Live preview: https://eroleric.github.io/loyalty-card/
+
+The website files in `dist/` are published to the root of the `gh-pages` branch. GitHub Pages uses that branch and the `/` folder. Relative asset links support the `/loyalty-card/` project URL. The repository and preview are public.
+
+After committing UI changes on `main` and pushing them to GitHub, publish the updated website with `git subtree push --prefix=dist origin gh-pages`.
 
 The source lives on `main`. Hosting configuration for the earlier Sites preview is excluded from the repository.
