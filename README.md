@@ -2,6 +2,8 @@
 
 A responsive, UI-only home screen with Circle K as its only retailer.
 
+Source repository: https://github.com/eroleric/loyalty-card
+
 ## Scope
 
 - Home screen and reusable retailer cards.
@@ -24,3 +26,9 @@ With Node.js installed, run `npm run dev` and open the printed local URL. No pac
 Run `npm run check` to check JavaScript syntax.
 
 This is a browser UI prototype, not a compiled iOS or Android app.
+
+## GitHub Pages
+
+The website files in `dist/` can be published to the root of the `gh-pages` branch. GitHub Pages should use that branch and the `/` folder. Relative asset links support the `/loyalty-card/` project URL.
+
+The source lives on `main`. Hosting configuration for the earlier Sites preview is excluded from the repository.

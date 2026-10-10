@@ -1,4 +1,3 @@
 node_modules/
-.openai/local/
-.openai/*.lock
+.openai/
 *.log
