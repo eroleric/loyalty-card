@@ -1,12 +1,16 @@
 {
   "name": "loyalty-card",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Loyalty Card UI and reusable local profile foundation, starting with Circle K.",
+  "description": "Loyalty Card with reusable profiles and a Supabase account integration, starting with Circle K.",
   "type": "module",
   "scripts": {
     "dev": "node serve.mjs",
-    "check": "node --check dist/app.js && node --check dist/profile.js && node --check dist/retailers.js && node --check serve.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
     "test": "node --test tests/*.test.mjs"
-  }
+  },
+  "dependencies": { "@supabase/supabase-js": "2.117.3" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.8", "esbuild": "0.28.2" },
+  "packageManager": "pnpm@10.29.3"
 }

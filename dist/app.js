@@ -1,5 +1,7 @@
 import { retailers } from "./retailers.js";
 import { TEXT_FIELDS, STORAGE_KEY, emptyProfile, normalizeProfile, validateProfile, profileSummary, fieldsForReview, localToday, readSavedProfile, writeSavedProfile, clearSavedProfile } from "./profile.js";
+import { accountConfig } from "./config.js";
+import { AccountUI } from "./account-ui.js";
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -59,7 +61,7 @@ renderRetailers(retailers);
 
 const form = document.getElementById("profile-form");
 const rememberInput = document.getElementById("rememberProfile");
-const state = { profile: null, remember: false, storage: null, hasBrowserCopy: false };
+const state = { profile: null, remember: false, storage: null, hasBrowserCopy: false, legacyProfile: null, busy: false, operation: 0 };
 let startupNotice = "";
 try {
   state.storage = window.localStorage;
@@ -67,6 +69,7 @@ try {
   const saved = readSavedProfile(state.storage);
   if (saved) {
     state.profile = saved.profile;
+    state.legacyProfile = saved.profile;
     state.remember = true;
   }
 } catch {
@@ -76,8 +79,48 @@ try {
   if (!state.hasBrowserCopy) state.storage = null;
 }
 
+const account = new AccountUI(accountConfig, snapshot => {
+  state.operation += 1;
+  state.busy = false;
+  state.profile = snapshot.profile;
+  state.remember = false;
+  for (const id of ["review-dialog", "delete-dialog", "browser-copy-dialog"]) {
+    const dialog = document.getElementById(id);
+    if (dialog.open) dialog.close();
+  }
+  document.getElementById("review-details").replaceChildren();
+  document.getElementById("review-preferences").textContent = "";
+  formMessage("");
+  notify("");
+  fillForm();
+  refreshSavedState();
+  refreshAccountMode();
+});
+
+function refreshAccountMode() {
+  account.profileBusy = state.busy;
+  const cloud = account.enabled;
+  const ready = cloud && account.status === "ready" && Boolean(account.user);
+  document.getElementById("local-storage-card").hidden = cloud;
+  document.getElementById("account-storage-card").hidden = !cloud;
+  document.getElementById("profile-account-notice").hidden = !cloud || ready;
+  document.getElementById("profile-account-prompt").textContent = account.user
+    ? account.status === "failed" ? "Your account profile couldn't be loaded. Retry from your account before editing." : "Loading your saved account profile…"
+    : account.status === "connecting" ? "Checking your sign-in…" : "Sign in to save your profile and use it on other devices.";
+  document.getElementById("profile-fields").disabled = state.busy || (cloud && !ready);
+  document.getElementById("migration-panel").hidden = !cloud || !ready || !state.hasBrowserCopy;
+  document.getElementById("migration-description").textContent = state.legacyProfile
+    ? "Nothing has been uploaded. Review these details, then choose Save profile to copy them into your signed-in account."
+    : "The old browser copy couldn't be read. It hasn't been uploaded. You can remove it here.";
+  document.getElementById("import-browser-profile").disabled = state.busy || !state.legacyProfile;
+  document.getElementById("remove-browser-profile").disabled = state.busy;
+  document.getElementById("delete-profile").disabled = state.busy || (cloud ? !ready || !state.profile : !state.profile && !state.hasBrowserCopy);
+  document.getElementById("signout").disabled = state.busy || account.busy;
+}
+
 function readForm() {
-  const data = Object.fromEntries(new FormData(form).entries());
+  // Read disabled controls too while an account request is in flight.
+  const data = Object.fromEntries(Object.keys(TEXT_FIELDS).map(key => [key, form.elements[key].value]));
   data.emailOffers = form.elements.emailOffers.checked;
   data.smsOffers = form.elements.smsOffers.checked;
   return normalizeProfile(data);
@@ -116,7 +159,7 @@ function refreshOverview() {
     item.append(element("span", "checklist-label", group.label), element("span", "checklist-status", group.complete ? "Filled in" : "Missing details"));
     return item;
   }));
-  document.getElementById("save-mode").textContent = rememberInput.checked ? "In this browser" : "For this page only";
+  document.getElementById("save-mode").textContent = account.enabled ? "In your account" : rememberInput.checked ? "In this browser" : "For this page only";
 }
 
 function fillForm() {
@@ -143,13 +186,14 @@ function refreshSavedState() {
   document.getElementById("profile-cta").lastChild.setAttribute("aria-hidden", "true");
   document.getElementById("nav-profile-dot").classList.toggle("is-complete", Boolean(complete));
   document.getElementById("saved-profile-state").textContent = state.profile
-    ? state.remember ? "Profile saved in this browser." : "Profile saved for this page only."
-    : state.hasBrowserCopy ? "A saved browser profile needs to be deleted or replaced." : "No saved profile yet.";
+    ? account.enabled ? "Profile saved in your account." : state.remember ? "Profile saved in this browser." : "Profile saved for this page only."
+    : account.enabled ? "No saved account profile yet." : state.hasBrowserCopy ? "A saved browser profile needs to be deleted or replaced." : "No saved profile yet.";
   document.getElementById("delete-profile").disabled = !state.profile && !state.hasBrowserCopy;
 }
 
-form.addEventListener("submit", event => {
+form.addEventListener("submit", async event => {
   event.preventDefault();
+  if (state.busy || (account.enabled && !account.profiles?.ready)) return;
   clearErrors();
   const result = validateProfile(readForm());
   const invalid = Object.entries(result.errors);
@@ -170,20 +214,36 @@ form.addEventListener("submit", event => {
     return;
   }
   const remember = rememberInput.checked;
+  const operation = ++state.operation;
+  state.busy = true;
+  refreshAccountMode();
   try {
-    if (state.storage) writeSavedProfile(state.storage, result.profile, remember);
+    if (account.enabled) {
+      const saved = await account.profiles.save(result.profile);
+      if (saved.stale || operation !== state.operation) return;
+      state.profile = saved.profile;
+    } else if (state.storage) writeSavedProfile(state.storage, result.profile, remember);
     else if (remember) throw new Error("Storage unavailable.");
   } catch {
-    formMessage("Your changes couldn't be saved in this browser. They haven't replaced your saved profile. Try again, or turn off remembering if the browser allows it.", true);
+    if (operation !== state.operation) return;
+    formMessage(account.enabled
+      ? "Your account profile couldn't be saved. Your edits are still here; check your connection and try again."
+      : "Your changes couldn't be saved in this browser. They haven't replaced your saved profile. Try again, or turn off remembering if the browser allows it.", true);
     return;
+  } finally {
+    if (operation === state.operation) { state.busy = false; refreshAccountMode(); }
   }
-  state.profile = result.profile;
-  state.remember = remember;
-  state.hasBrowserCopy = remember;
+  if (!account.enabled) {
+    state.profile = result.profile;
+    state.remember = remember;
+    state.hasBrowserCopy = remember;
+    state.legacyProfile = remember ? result.profile : null;
+  }
   fillForm();
   refreshSavedState();
   notify("");
-  formMessage(remember ? "Profile saved in this browser. Nothing has been sent to a retailer." : "Profile saved for this page. Reloading or closing it will clear these details.");
+  refreshAccountMode();
+  formMessage(account.enabled ? "Profile saved to your account. Nothing has been sent to a retailer." : remember ? "Profile saved in this browser. Nothing has been sent to a retailer." : "Profile saved for this page. Reloading or closing it will clear these details.");
 });
 
 form.addEventListener("input", event => {
@@ -201,26 +261,69 @@ document.getElementById("cancel-profile").addEventListener("click", () => {
 });
 
 const deleteDialog = document.getElementById("delete-dialog");
-document.getElementById("delete-profile").addEventListener("click", () => deleteDialog.showModal());
+document.getElementById("delete-profile").addEventListener("click", () => {
+  document.getElementById("delete-description").textContent = account.enabled
+    ? "This deletes the saved profile from your account. Your sign-in and any old browser copy are kept."
+    : "This removes the profile from this page and any copy saved by this app in this browser.";
+  deleteDialog.showModal();
+});
 document.getElementById("keep-profile").addEventListener("click", () => deleteDialog.close());
-document.getElementById("confirm-delete-profile").addEventListener("click", () => {
+document.getElementById("confirm-delete-profile").addEventListener("click", async () => {
+  if (state.busy || (account.enabled && !account.profiles?.ready)) return;
+  const operation = ++state.operation;
+  state.busy = true;
+  document.getElementById("confirm-delete-profile").disabled = true;
+  document.getElementById("keep-profile").disabled = true;
+  refreshAccountMode();
   try {
-    if (state.storage) clearSavedProfile(state.storage);
+    if (account.enabled) {
+      const result = await account.profiles.remove();
+      if (result.stale || operation !== state.operation) return;
+    } else if (state.storage) clearSavedProfile(state.storage);
     else if (state.hasBrowserCopy) throw new Error("Storage unavailable.");
   } catch {
+    if (operation !== state.operation) return;
     deleteDialog.close();
-    formMessage("The saved browser copy couldn't be removed. Your profile has been kept; try again when browser storage is available.", true);
+    formMessage(account.enabled ? "The account profile couldn't be deleted. Check your connection and try again." : "The saved browser copy couldn't be removed. Your profile has been kept; try again when browser storage is available.", true);
     return;
+  } finally {
+    document.getElementById("confirm-delete-profile").disabled = false;
+    document.getElementById("keep-profile").disabled = false;
+    if (operation === state.operation) { state.busy = false; refreshAccountMode(); }
   }
   state.profile = null;
   state.remember = false;
-  state.hasBrowserCopy = false;
+  if (!account.enabled) { state.hasBrowserCopy = false; state.legacyProfile = null; }
   fillForm();
   refreshSavedState();
   deleteDialog.close();
   notify("");
-  formMessage("Your saved profile has been deleted from this page and this app's browser storage.");
+  refreshAccountMode();
+  formMessage(account.enabled ? "Your saved account profile has been deleted. Your sign-in has been kept." : "Your saved profile has been deleted from this page and this app's browser storage.");
   form.elements.firstName.focus();
+});
+
+document.getElementById("import-browser-profile").addEventListener("click", () => {
+  if (!account.profiles?.ready || !state.legacyProfile || state.busy) return;
+  for (const key of Object.keys(TEXT_FIELDS)) form.elements[key].value = state.legacyProfile[key];
+  form.elements.emailOffers.checked = state.legacyProfile.emailOffers;
+  form.elements.smsOffers.checked = state.legacyProfile.smsOffers;
+  clearErrors();
+  refreshOverview();
+  formMessage("Browser details are in the form for review. Choose Save profile to copy them into your account. Your account's saved profile hasn't changed yet.");
+  form.elements.firstName.focus();
+});
+const browserCopyDialog = document.getElementById("browser-copy-dialog");
+document.getElementById("remove-browser-profile").addEventListener("click", () => browserCopyDialog.showModal());
+document.getElementById("keep-browser-copy").addEventListener("click", () => browserCopyDialog.close());
+document.getElementById("confirm-remove-browser-copy").addEventListener("click", () => {
+  try { clearSavedProfile(state.storage); }
+  catch { browserCopyDialog.close(); formMessage("The browser copy couldn't be removed. Try again when browser storage is available.", true); return; }
+  state.hasBrowserCopy = false;
+  state.legacyProfile = null;
+  browserCopyDialog.close();
+  refreshAccountMode();
+  formMessage("The old browser copy has been removed. Your account profile and current form have been kept.");
 });
 
 const reviewDialog = document.getElementById("review-dialog");
@@ -257,18 +360,20 @@ document.getElementById("edit-review-profile").addEventListener("click", () => {
 });
 
 function showView(focusHeading = false) {
-  if (!["", "#home", "#profile"].includes(location.hash)) return;
+  if (!["", "#home", "#profile", "#account"].includes(location.hash)) return;
   const isProfile = location.hash === "#profile";
-  document.getElementById("home-view").hidden = isProfile;
+  const isAccount = location.hash === "#account";
+  document.getElementById("home-view").hidden = isProfile || isAccount;
   document.getElementById("profile-view").hidden = !isProfile;
-  for (const [id, current] of [["home-link", !isProfile], ["profile-link", isProfile]]) {
+  document.getElementById("account-view").hidden = !isAccount;
+  for (const [id, current] of [["home-link", !isProfile && !isAccount], ["profile-link", isProfile], ["account-link", isAccount]]) {
     const link = document.getElementById(id);
     if (current) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
-  document.title = isProfile ? "My profile · Loyalty Card" : "Loyalty Card";
+  document.title = isProfile ? "My profile · Loyalty Card" : isAccount ? "Account · Loyalty Card" : "Loyalty Card";
   if (focusHeading) {
-    const heading = document.getElementById(isProfile ? "profile-title" : "welcome-title");
+    const heading = document.getElementById(isProfile ? "profile-title" : isAccount ? "account-title" : "welcome-title");
     heading.tabIndex = -1;
     heading.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -283,3 +388,4 @@ fillForm();
 refreshSavedState();
 showView();
 notify(startupNotice);
+account.init();
