@@ -1,10 +1,11 @@
-import { AccountProfiles, validateAccountConfig, createSessionStorage, accountError } from "./account.js";
+import { AccountProfiles, validateAccountConfig, createSessionStorage, accountError, isEmailLinkCallback, cleanEmailLinkUrl } from "./account.js";
 
 const $ = id => document.getElementById(id);
 
 export class AccountUI {
   constructor(config, onChange) {
     this.config = config;
+    this.linkMode = config.emailSignIn === "link";
     this.onChange = onChange;
     this.enabled = false;
     this.client = null;
@@ -57,7 +58,13 @@ export class AccountUI {
     $("signout").disabled = this.busy || this.profileBusy;
     $("retry-profile").disabled = this.busy || this.status === "loading";
     $("retry-profile").hidden = this.status !== "failed";
-    $("send-code").textContent = this.busy ? "Sending…" : "Send sign-in code";
+    $("send-code").textContent = this.busy ? "Sending…" : this.linkMode ? "Email me a sign-in link" : "Send sign-in code";
+    $("signin-description").textContent = this.linkMode ? "We'll email you a one-time sign-in link. Opening it creates your account if you're new here." : "We'll send you a one-time code. If you're new here, verifying your email creates your account.";
+    $("verify-prompt").textContent = this.linkMode ? "Open the sign-in link sent to " : "Enter the code sent to ";
+    $("auth-code-field").hidden = this.linkMode;
+    $("auth-code").disabled = this.linkMode;
+    $("verify-code").hidden = this.linkMode;
+    $("test-email-notice").hidden = !this.enabled || !this.config.testEmailOnly;
     $("verify-code").textContent = this.busy ? "Please wait…" : "Verify and sign in";
     $("signed-email").textContent = this.user?.email || "";
     $("code-email").textContent = this.email;
@@ -70,12 +77,13 @@ export class AccountUI {
   renderResend() {
     const seconds = Math.max(0, Math.ceil((this.resendAt - Date.now()) / 1000));
     $("resend-code").disabled = this.busy || seconds > 0;
-    $("resend-code").textContent = seconds > 0 ? `Resend in ${seconds}s` : "Resend code";
+    $("resend-code").textContent = seconds > 0 ? `Resend in ${seconds}s` : this.linkMode ? "Resend link" : "Resend code";
   }
   async init() {
     try { this.enabled = validateAccountConfig(this.config); } catch { this.message("The account service isn't ready. Your browser profile is still available.", true); }
     this.render();
     if (!this.enabled) return;
+    const returnedLink = this.linkMode && isEmailLinkCallback(location.href);
     this.status = "connecting";
     this.onChange({ status: this.status, user: null, profile: null });
     try {
@@ -97,7 +105,7 @@ export class AccountUI {
         finally { clearTimeout(timeout); init.signal?.removeEventListener("abort", abort); }
       };
       this.client = createClient(this.config.supabaseUrl, this.config.publishableKey, {
-        auth: { storage: createSessionStorage(storage, { runtimeKey, storageKey }), storageKey: runtimeKey, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+        auth: { storage: createSessionStorage(storage, { runtimeKey, storageKey }), storageKey: runtimeKey, persistSession: true, autoRefreshToken: true, flowType: "implicit", detectSessionInUrl: this.linkMode },
         global: { fetch: timedFetch },
       });
       this.profiles = new AccountProfiles(this.client);
@@ -120,8 +128,19 @@ export class AccountUI {
       });
       const { error } = await this.client.auth.getSession();
       if (error) throw error;
+      if (returnedLink) {
+        // The SDK verifies and consumes the callback before routing. Never show
+        // provider error descriptions, or leave auth tokens in the app's URL.
+        history.replaceState(null, "", cleanEmailLinkUrl(location.href));
+        location.hash = "account";
+        if (!this.user) this.message("That sign-in link couldn't be used. It may have expired. Request a new link below.", true);
+      }
       this.render();
     } catch {
+      if (returnedLink) {
+        history.replaceState(null, "", cleanEmailLinkUrl(location.href));
+        location.hash = "account";
+      }
       this.client = null;
       this.status = "failed";
       this.message("Sign-in couldn't start. Reload this page to try again.", true);
@@ -139,7 +158,9 @@ export class AccountUI {
     this.message("");
     this.render();
     try {
-      const { error } = await this.client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+      const options = { shouldCreateUser: true };
+      if (this.linkMode) options.emailRedirectTo = new URL("./", location.href).href;
+      const { error } = await this.client.auth.signInWithOtp({ email, options });
       if (error) throw error;
       this.email = email;
       this.resendAt = Date.now() + 60000;
@@ -148,13 +169,13 @@ export class AccountUI {
         this.renderResend();
         if (Date.now() >= this.resendAt) { clearInterval(this.timer); this.timer = null; }
       }, 1000);
-      this.message("Check your inbox for the sign-in code. It may take a moment to arrive.");
-    } catch (error) { this.message(accountError(error, "The code couldn't be sent. Try again, or check back when email sign-in is available."), true); }
+      this.message(this.linkMode ? "Check your inbox and open the sign-in link. It may take a moment to arrive." : "Check your inbox for the sign-in code. It may take a moment to arrive.");
+    } catch (error) { this.message(accountError(error, "The sign-in email couldn't be sent. Try again, or check back when email sign-in is available."), true); }
     finally { this.busy = false; this.render(); }
-    if (this.email) $("auth-code").focus();
+    if (this.email && !this.linkMode) $("auth-code").focus();
   }
   async verifyCode() {
-    if (!this.client || this.busy || !this.email) return;
+    if (!this.client || this.busy || !this.email || this.linkMode) return;
     const token = $("auth-code").value.trim();
     if (!/^[0-9]{6,10}$/.test(token)) { this.invalid("auth-code", "Enter the numeric code from your email."); return; }
     this.busy = true;
