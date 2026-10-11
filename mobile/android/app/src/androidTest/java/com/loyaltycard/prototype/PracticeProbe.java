@@ -25,7 +25,7 @@ public class PracticeProbe extends EnrollmentProbe {
             runOnMainSync(() -> {
                 WebViewCompat.addWebMessageListener(activity.retailer, "PracticeProbe", Collections.singleton("https://auth.loyalty.test"), (v,m,o,f,r) -> snapshot=m.getData());
                 WebViewCompat.addDocumentStartJavaScript(activity.retailer,
-                    "window.addEventListener('message',e=>{if(e.origin!=='https://appassets.androidplatform.net'||e.source!==parent)return;const a=e.data.testAction;if(!a)return;const q=s=>document.querySelector(s);switch(a){case 'phoneNext':q('#phone-form').requestSubmit();break;case 'code':q('#otp').value=e.data.value;q('#code-form').requestSubmit();break;case 'resend':q('#resend').click();break;case 'finish':q('#details-form').requestSubmit();break;case 'consent':q('#terms').checked=true;break;case 'challenge':q('#challenge-check').checked=true;q('#challenge-next').click();break;case 'scenario':q('#scenario').value=e.data.value;q('#scenario').dispatchEvent(new Event('change'));break;}PracticeProbe.postMessage(JSON.stringify({stage:document.body.dataset.stage,message:q('#message').textContent,terms:q('#terms')?.checked||false,marketing:q('#marketing-sms')?.checked||q('#marketing-email')?.checked||false,email:q('#email')?.value||'',phone:q('#phone')?.value||''}));});",
+                    "window.addEventListener('message',e=>{if(e.origin!=='https://appassets.androidplatform.net'||e.source!==parent)return;const a=e.data.testAction;if(!a)return;const q=s=>document.querySelector(s);switch(a){case 'phoneNext':q('#phone-form').requestSubmit();break;case 'code':q('#otp').value=e.data.value;q('#code-form').requestSubmit();break;case 'resend':q('#resend').click();break;case 'finish':q('#details-form').requestSubmit();break;case 'consent':q('#terms').checked=true;break;case 'challenge':q('#challenge-check').checked=true;q('#challenge-next').click();break;case 'scenario':q('#scenario').value=e.data.value;q('#scenario').dispatchEvent(new Event('change'));break;}PracticeProbe.postMessage(JSON.stringify({stage:document.body.dataset.stage,outcome:document.body.dataset.outcome,message:q('#message').textContent,terms:q('#terms')?.checked||false,marketing:q('#marketing-sms')?.checked||q('#marketing-email')?.checked||false,email:q('#email')?.value||'',phone:q('#phone')?.value||''}));});",
                     Collections.singleton("https://auth.loyalty.test"));
             });
             js("document.getElementById('native-enroll').click()");
@@ -43,7 +43,7 @@ public class PracticeProbe extends EnrollmentProbe {
             require(action("finish", "").optString("stage").equals("details"), "Missing consent accepted");
             screenshot("circle-k-practice-details.png");
             action("consent", "");
-            require(action("finish", "").optString("stage").equals("complete"), "Practice signup failed");
+            require(action("finish", "").optString("outcome").equals("signed-up"), "New member did not complete signup");
             screenshot("circle-k-practice-complete.png");
             action("scenario", "forbidden"); waitForFill();
             require(action("phoneNext", "").optString("stage").equals("error"), "403 scenario failed");
@@ -54,7 +54,11 @@ public class PracticeProbe extends EnrollmentProbe {
             require(action("code", "123456").optString("message").contains("expired"), "Expired code accepted");
             action("resend", ""); require(action("code", "123456").optString("stage").equals("details"), "Resend recovery failed");
             action("scenario", "existing"); waitForFill(); action("phoneNext", "");
-            require(action("code", "123456").optString("stage").equals("complete"), "Existing member scenario failed");
+            require(action("code", "000000").optString("stage").equals("sms"), "Existing member bypassed verification");
+            JSONObject existing = action("code", "123456");
+            require(existing.optString("outcome").equals("signed-in"), "Existing member incorrectly routed to signup");
+            require(existing.optString("email").isEmpty() && !existing.optBoolean("terms"), "Existing member was shown signup fields");
+            screenshot("circle-k-practice-signin.png");
             AtomicReference<Boolean> networkBlocked = new AtomicReference<>(false);
             runOnMainSync(() -> networkBlocked.set(activity.retailer.getSettings().getBlockNetworkLoads()));
             require(networkBlocked.get(), "Network was enabled");
@@ -84,3 +88,4 @@ public class PracticeProbe extends EnrollmentProbe {
         return new JSONObject(snapshot);
     }
 }
+

@@ -3,17 +3,18 @@
   const message = document.getElementById('message');
   const scenario = document.getElementById('scenario');
   let phone = '', email = '', stage = '', codeExpired = false;
-  const report = (name, label) => {
+  const report = (name, label, outcome = '') => {
     stage = name;
     document.body.dataset.stage = name;
-    window.CircleAssist?.postMessage(JSON.stringify({type:'stage',stage:name,label}));
+    document.body.dataset.outcome = outcome;
+    window.CircleAssist?.postMessage(JSON.stringify({type:'stage',stage:name,label,outcome}));
     parent.postMessage({type:'practice-stage',stage:name}, 'https://appassets.androidplatform.net');
   };
   const error = text => { message.textContent = text; };
-  const render = (html, name, label) => {
+  const render = (html, name, label, outcome = '') => {
     message.textContent = '';
     step.innerHTML = html;
-    report(name, label);
+    report(name, label, outcome);
   };
   const start = () => {
     phone = ''; email = ''; codeExpired = false;
@@ -40,6 +41,11 @@
   const verification = () => {
     codeExpired = scenario.value === 'expired';
     render('<p class="eyebrow">STEP 2 · VERIFICATION</p><h2>Enter your code</h2><p>No text was sent. This tests the point where you would enter an SMS code.</p><p class="code-hint">Practice code: <strong>123456</strong></p><form id="code-form"><label for="otp">6-digit verification code</label><input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" required><button type="submit">Verify code</button></form><button id="resend" class="secondary" type="button">Get a new practice code</button>', 'sms', 'Enter the practice code yourself.');
+    if (scenario.value === 'existing') {
+      step.querySelector('h2').textContent = 'Sign in with your code';
+      step.querySelector('h2 + p').textContent = 'This scenario represents an existing member. Verify your phone to sign in; no new account will be created. No text was sent.';
+      document.querySelector('#code-form button').textContent = 'Verify and sign in';
+    }
     document.getElementById('resend').onclick = () => { codeExpired = false; error('New practice code ready: 123456. No text was sent.'); };
     document.getElementById('code-form').onsubmit = event => {
       event.preventDefault();
@@ -56,7 +62,7 @@
     document.getElementById('details-form').onsubmit = event => { event.preventDefault(); email = document.getElementById('email').value; complete(false); };
   };
   const complete = existing => {
-    render(`<p class="eyebrow">PRACTICE COMPLETE</p><h2>${existing ? 'Practice sign-in complete' : 'Practice signup complete'}</h2><p>You reached the end of this simulated flow. No Circle K account or card was created.</p><button id="again" type="button">Practice again</button>`, 'complete', 'Simulation completed. No real membership created.');
+    render(`<p class="eyebrow">PRACTICE COMPLETE</p><h2>${existing ? 'Practice sign-in complete' : 'Practice signup complete'}</h2><p>${existing ? 'Your existing practice account was signed in. Signup details were skipped; no duplicate account was created.' : 'Your new-member practice flow is complete.'} No real Circle K account or card was created.</p><button id="again" type="button">Practice again</button>`, 'complete', existing ? 'Existing member signed in · simulation only.' : 'New member signup completed · simulation only.', existing ? 'signed-in' : 'signed-up');
     document.getElementById('again').onclick = start;
   };
   document.getElementById('restart').onclick = start;
