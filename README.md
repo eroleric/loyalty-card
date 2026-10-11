@@ -8,7 +8,7 @@ Source: https://github.com/eroleric/loyalty-card
 
 ## Using the prototype
 
-Open My profile, enter any details you want to keep, and choose **Save on this device**. The form reloads those details when you return in the same browser. Existing version-1 browser profiles are preserved. Editing, canceling changes, partial saving, and deleting saved details are available. Circle K's **Preview signup** shows the saved fields for review.
+Open My profile, enter any details you want to keep, and choose **Save on this device**. The form reloads those details when you return in the same browser. Existing version-1 browser profiles are preserved. Editing, canceling changes, partial saving, and deleting saved details are available. Circle K's **Preview profile** shows the saved fields for review.
 
 The app has no sign-in, database, email service, or third-party SDK dependencies. Supabase integration code and setup were removed. The previously created empty Supabase project is unused; this change does not delete or modify it.
 
@@ -29,3 +29,9 @@ The app is a browser UI prototype, not a compiled iOS or Android app. UI and sty
 ## Publishing
 
 Source lives on `main`. GitHub Pages publishes the root of `gh-pages`. After committing and pushing changes, run `git subtree push --prefix=dist origin gh-pages`. Relative asset paths support the `/loyalty-card/` URL. The source and website are public.
+
+## Design approach
+
+The interface focuses on saving a profile and reviewing it for a retailer. The home screen uses compact cards, familiar navigation, and one clear profile action. The profile groups contact and address fields, hides optional birthday/offer preferences in an accessible details disclosure, and shows save feedback and unsaved changes near the action. The existing version-1 profile storage is unchanged.
+
+Guidance reviewed: Laws of UX, second edition (Fitts’s law, Hick’s law, and progressive disclosure; PDF pages 34, 63, 152), and The User Experience Team of One, second edition (task flows; PDF pages 255–257). These informed design decisions; they do not establish that customers find this version easier.

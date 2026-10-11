@@ -18,26 +18,19 @@ function createRetailerCard(retailer, index) {
 
   const cover = element("div", "retailer-cover");
   cover.setAttribute("aria-hidden", "true");
-  cover.append(
-    element("span", "cover-ring"),
-    element("span", "cover-ring cover-ring-small"),
-    element("span", "retailer-monogram", retailer.initials),
-    element("span", "cover-name", retailer.name),
-  );
+  cover.append(element("span", "retailer-monogram", retailer.initials));
 
   const details = element("div", "retailer-details");
   const nameRow = element("div", "retailer-name-row");
   const name = element("h3", null, retailer.name);
   name.id = headingId;
-  nameRow.append(name, element("span", "retailer-tag", retailer.category));
+  nameRow.append(name);
 
   const footer = element("div", "retailer-footer");
-  // Static decorative icon; retailer text always uses textContent.
-  footer.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><rect x="3" y="5" width="14" height="11" rx="2.5"/><path d="M3 8.5h14M6 12h3"/></svg>';
   footer.append(element("span", null, "Signup not connected yet"));
-  const previewButton = element("button", "button button-secondary retailer-preview", "Preview signup");
+  const previewButton = element("button", "button button-secondary retailer-preview", "Preview profile");
   previewButton.type = "button";
-  previewButton.setAttribute("aria-label", `Preview signup for ${retailer.name}`);
+  previewButton.setAttribute("aria-label", `Preview profile for ${retailer.name}`);
   previewButton.addEventListener("click", () => openSignupPreview(retailer));
   details.append(nameRow, element("p", "retailer-program", retailer.program), footer, previewButton);
   card.append(cover, details);
@@ -101,19 +94,11 @@ function notify(message) {
   target.hidden = !message;
 }
 
-function refreshOverview() {
-  const summary = profileSummary(readForm());
-  document.getElementById("completion-count").textContent = `${summary.complete} of ${summary.total}`;
-  document.getElementById("profile-progress").value = summary.complete;
-  document.getElementById("completion-description").textContent = summary.complete === summary.total
-    ? "Your common fields are filled in. Save to keep your changes."
-    : "Fill what you know now. You can add the rest later.";
-  const checklist = document.getElementById("profile-checklist");
-  checklist.replaceChildren(...summary.groups.map(group => {
-    const item = element("li", group.complete ? "is-complete" : "");
-    item.append(element("span", "checklist-label", group.label), element("span", "checklist-status", group.complete ? "Filled in" : "Missing details"));
-    return item;
-  }));
+function refreshDraftStatus() {
+  const changed = JSON.stringify(readForm()) !== JSON.stringify(state.profile || emptyProfile());
+  document.getElementById("draft-state").textContent = changed
+    ? "Unsaved changes"
+    : state.profile ? "Your saved details are up to date." : "Add any details, then save.";
 }
 
 function fillForm() {
@@ -122,20 +107,19 @@ function fillForm() {
   form.elements.emailOffers.checked = profile.emailOffers;
   form.elements.smsOffers.checked = profile.smsOffers;
   clearErrors();
-  refreshOverview();
+  refreshDraftStatus();
 }
 
 function refreshSavedState() {
   const summary = profileSummary(state.profile);
   const complete = state.profile && summary.complete === summary.total;
   const badge = document.getElementById("profile-badge");
-  badge.textContent = complete ? "Common details saved" : state.profile ? "Profile started" : "Not set up";
+  badge.textContent = state.profile ? "Saved" : "Not saved yet";
   badge.classList.toggle("is-complete", Boolean(complete));
   document.getElementById("home-profile-description").textContent = state.profile
-    ? `${summary.complete} of ${summary.total} common details saved. You can review and edit them anytime.`
-    : "Add your details once, ready to review when you sign up.";
-  document.getElementById("profile-cta").replaceChildren(document.createTextNode(state.profile ? "Edit profile" : "Set up profile"), element("span", null, "↗"));
-  document.getElementById("profile-cta").lastChild.setAttribute("aria-hidden", "true");
+    ? "Your details are saved in this browser."
+    : "Keep your name, email, and address ready for signup forms.";
+  document.getElementById("profile-cta").textContent = state.profile ? "Edit profile" : "Set up profile";
   document.getElementById("nav-profile-dot").classList.toggle("is-complete", Boolean(complete));
   document.getElementById("saved-profile-state").textContent = state.profile
     ? "Profile saved on this device."
@@ -154,6 +138,8 @@ form.addEventListener("submit", event => {
       const error = document.getElementById(`${key}-error`);
       error.textContent = message;
       error.hidden = false;
+      const optionalSection = form.elements[key].closest("details");
+      if (optionalSection) optionalSection.open = true;
     }
     formMessage("Check the highlighted details, then save again.", true);
     form.elements[invalid[0][0]].focus();
@@ -176,7 +162,7 @@ form.addEventListener("submit", event => {
   fillForm();
   refreshSavedState();
   notify("");
-  formMessage("Profile saved on this device. It's ready to reuse in the signup preview.");
+  formMessage("Saved on this device.");
 });
 
 form.addEventListener("input", event => {
@@ -185,12 +171,12 @@ form.addEventListener("input", event => {
     event.target.removeAttribute("aria-invalid");
     document.getElementById(`${event.target.name}-error`).hidden = true;
   }
-  refreshOverview();
+  refreshDraftStatus();
 });
-form.addEventListener("change", refreshOverview);
+form.addEventListener("change", refreshDraftStatus);
 document.getElementById("cancel-profile").addEventListener("click", () => {
   fillForm();
-  formMessage("Unsaved changes cleared.");
+  formMessage("Changes cancelled. Your saved details are unchanged.");
 });
 
 const deleteDialog = document.getElementById("delete-dialog");
@@ -211,7 +197,7 @@ document.getElementById("confirm-delete-profile").addEventListener("click", () =
   refreshSavedState();
   deleteDialog.close();
   notify("");
-  formMessage("Your saved profile has been deleted from this page and this app's browser storage.");
+  formMessage("Saved profile deleted.");
   form.elements.firstName.focus();
 });
 
@@ -221,7 +207,7 @@ function openSignupPreview(retailer) {
   document.getElementById("review-empty").hidden = Boolean(state.profile);
   const details = document.getElementById("review-details");
   // Until adapters exist this previews the whole saved profile, not a retailer's actual request.
-  const rows = state.profile ? fieldsForReview(state.profile, Object.keys(TEXT_FIELDS)) : [];
+  const rows = state.profile ? fieldsForReview(state.profile, Object.keys(TEXT_FIELDS)).filter(row => row.value) : [];
   details.replaceChildren(...rows.map(row => {
     const item = element("div", row.value ? "review-row" : "review-row is-missing");
     item.append(element("dt", null, row.label), element("dd", null, row.value || "Not provided"));
