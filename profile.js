@@ -83,11 +83,10 @@ export function readSavedProfile(storage) {
   return { profile: result.profile, updatedAt: record.updatedAt };
 }
 
-export function writeSavedProfile(storage, input, remember, now = new Date().toISOString()) {
+export function writeSavedProfile(storage, input, now = new Date().toISOString()) {
   const { profile, errors } = validateProfile(input);
   if (Object.keys(errors).length) throw new Error("Profile has invalid details.");
-  if (remember) storage.setItem(STORAGE_KEY, JSON.stringify({ version: PROFILE_VERSION, profile, updatedAt: now }));
-  else storage.removeItem(STORAGE_KEY);
+  storage.setItem(STORAGE_KEY, JSON.stringify({ version: PROFILE_VERSION, profile, updatedAt: now }));
   return { profile, updatedAt: now };
 }
 
