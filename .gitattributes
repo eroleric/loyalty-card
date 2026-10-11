@@ -1,2 +1,0 @@
-# Generated SDK contains significant whitespace inside template literals.
-dist/vendor/supabase.js linguist-generated=true whitespace=-trailing-space

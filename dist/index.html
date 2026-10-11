@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f8f4" />
-    <meta name="referrer" content="no-referrer" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <meta name="description" content="Loyalty Card — your favorite retailers, together in one place." />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
     <title>Loyalty Card</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
@@ -25,7 +25,6 @@
         <nav class="app-nav" aria-label="Main navigation">
           <a href="#home" id="home-link" aria-current="page">Retailers</a>
           <a href="#profile" id="profile-link">My profile<span id="nav-profile-dot" class="nav-dot" aria-hidden="true"></span></a>
-          <a href="#account" id="account-link">Account</a>
         </nav>
       </div>
     </header>
@@ -82,10 +81,8 @@
 
       <section id="profile-view" class="profile-view" aria-labelledby="profile-title" hidden>
         <a class="back-link" href="#home"><span aria-hidden="true">←</span> Back to retailers</a>
-        <div class="profile-page-heading"><div><p class="eyebrow">YOUR DETAILS, READY WHEN YOU ARE</p><h1 id="profile-title" tabindex="-1">One profile.<br />Fewer forms.</h1><p class="welcome-description">Keep the details you want to use for loyalty signups in one place.</p></div><span class="profile-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg></span></div>
+        <div class="profile-page-heading"><div><p class="eyebrow">YOUR DETAILS, READY WHEN YOU ARE</p><h1 id="profile-title" tabindex="-1">One profile.<br />Fewer forms.</h1><p class="welcome-description">Save your details on this device, ready to reuse on signup forms.</p></div><span class="profile-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg></span></div>
         <noscript><p class="notice">JavaScript is needed to edit and save your profile. Your details will not be submitted by this page.</p></noscript>
-        <div id="profile-account-notice" class="notice account-prompt" hidden><p id="profile-account-prompt"></p><a href="#account" class="text-link">Go to account →</a></div>
-        <div id="migration-panel" class="notice migration-panel" hidden><div><strong>A profile is saved in this browser.</strong><p id="migration-description">Nothing has been uploaded. Review these details, then choose Save profile to copy them into your signed-in account.</p></div><div class="migration-actions"><button id="import-browser-profile" type="button" class="button button-secondary">Review browser details</button><button id="remove-browser-profile" type="button" class="text-button danger-button">Remove browser copy</button></div></div>
         <div class="profile-layout">
           <form id="profile-form" class="profile-form" novalidate>
             <p id="form-message" class="form-message" role="status" aria-live="polite" hidden></p>
@@ -120,13 +117,11 @@
                 </div>
                 <p class="field-help">These are preferences, not consent. You'll choose separately on each retailer's signup.</p>
               </section>
-              <section id="local-storage-card" class="form-card storage-card" aria-labelledby="storage-title">
-                <div class="form-section-heading"><span class="section-number" aria-hidden="true">04</span><div><h2 id="storage-title">Remember your details</h2><p>Choose how long this browser keeps your profile.</p></div></div>
-                <label class="check-option storage-option"><input id="rememberProfile" name="rememberProfile" type="checkbox"/><span><strong>Remember in this browser</strong><small>Saves your details locally, without encryption. Use only in a browser you trust.</small></span></label>
-                <p id="storage-help" class="field-help">With this off, saved details last only until you reload or close this page.</p>
+              <section class="form-card storage-card" aria-labelledby="storage-title">
+                <div class="form-section-heading"><span class="section-number" aria-hidden="true">04</span><div><h2 id="storage-title">Saved on this device</h2><p>Save once and your details will be here when you return in this browser.</p></div></div>
+                <p id="storage-help" class="field-help">No account needed. Clearing browser data removes your saved profile.</p>
               </section>
-              <section id="account-storage-card" class="form-card storage-card" aria-labelledby="account-storage-title" hidden><div class="form-section-heading"><span class="section-number" aria-hidden="true">04</span><div><h2 id="account-storage-title">Saved to your account</h2><p>Your saved profile is available when you sign in on another device. Your sign-in lasts until you close this tab.</p></div></div><p class="field-help">Only Save profile uploads these details. Retailer signups are still disconnected.</p></section>
-              <div class="form-actions"><button type="submit" class="button button-primary">Save profile</button><button id="cancel-profile" type="button" class="button button-secondary">Cancel changes</button><span id="save-mode" class="save-mode">For this page only</span></div>
+              <div class="form-actions"><button type="submit" class="button button-primary">Save on this device</button><button id="cancel-profile" type="button" class="button button-secondary">Cancel changes</button></div>
             </fieldset>
           </form>
           <aside class="profile-sidebar" aria-label="Profile overview">
@@ -140,37 +135,11 @@
           </aside>
         </div>
       </section>
-
-      <section id="account-view" class="account-view" aria-labelledby="account-title" hidden>
-        <a class="back-link" href="#home"><span aria-hidden="true">←</span> Back to retailers</a>
-        <div class="account-layout">
-          <div class="account-intro"><p class="eyebrow">YOUR PROFILE, WHEREVER YOU ARE</p><h1 id="account-title" tabindex="-1">One account.<br />Everyday ready.</h1><p class="welcome-description">Sign in to keep your signup details across browsers and devices.</p><div class="account-benefits"><p><span aria-hidden="true">✓</span> Your profile belongs to your account</p><p><span aria-hidden="true">✓</span> Review details before sharing</p><p><span aria-hidden="true">✓</span> No retailer signup happens here</p></div></div>
-          <div class="account-card">
-            <span id="account-badge" class="status-badge">Setup pending</span>
-            <div id="account-unavailable" class="account-unavailable"><h2>Account sync is coming next</h2><p>The account service isn't connected yet. You can keep using your browser profile in the meantime.</p><a href="#profile" class="text-link">Go to my profile →</a></div>
-            <form id="signin-form" novalidate>
-              <fieldset id="signin-fields" class="profile-fields" disabled>
-                <h2>Sign in with email</h2><p id="signin-description" class="account-description">We'll email you a one-time sign-in link. Opening it creates your account if you're new here.</p>
-                <div class="form-field"><label for="auth-email">Account email</label><input id="auth-email" name="accountEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required aria-describedby="auth-email-error"/><p id="auth-email-error" class="field-error" hidden></p></div>
-                <button id="send-code" type="submit" class="button button-primary">Send sign-in code</button>
-                <p class="account-footnote">No password to remember. You sign in separately on each device.</p>
-                <p id="test-email-notice" class="account-footnote" hidden>Prototype sign-in is currently limited to our test team. Email delivery limits apply.</p>
-              </fieldset>
-            </form>
-            <form id="verify-form" novalidate hidden>
-              <fieldset id="verify-fields" class="profile-fields" disabled><h2>Check your email</h2><p class="account-description"><span id="verify-prompt">Enter the code sent to </span><strong id="code-email"></strong>.</p><div id="auth-code-field" class="form-field"><label for="auth-code">Sign-in code</label><input id="auth-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Your email code" required aria-describedby="auth-code-error"/><p id="auth-code-error" class="field-error" hidden></p></div><button id="verify-code" type="submit" class="button button-primary">Verify and sign in</button><div class="code-actions"><button id="resend-code" type="button" class="text-button">Resend code</button><button id="change-auth-email" type="button" class="text-button">Use another email</button></div></fieldset>
-            </form>
-            <div id="signed-account" hidden><h2>You're signed in</h2><p id="signed-email" class="signed-email"></p><p id="account-profile-status" class="account-description" role="status"></p><div class="signed-actions"><a href="#profile" class="button button-primary">Go to my profile</a><button id="retry-profile" type="button" class="button button-secondary" hidden>Retry loading profile</button><button id="signout" type="button" class="button button-secondary">Sign out</button></div><p class="account-footnote">Sign out on shared devices. Your saved account profile stays available next time you sign in.</p></div>
-            <p id="auth-message" class="form-message" role="status" aria-live="polite" hidden></p>
-          </div>
-        </div>
-      </section>
     </main>
 
     <footer class="app-footer"><span>Loyalty Card</span><span>Your retailers, together.</span></footer>
     <div id="app-notice" class="app-notice" role="status" aria-live="polite" hidden></div>
     <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description"><h2 id="delete-title">Delete your saved profile?</h2><p id="delete-description">This removes the profile from this page and any copy saved by this app in this browser.</p><div class="dialog-actions"><button id="keep-profile" class="button button-secondary" type="button">Keep profile</button><button id="confirm-delete-profile" class="button button-danger" type="button">Delete profile</button></div></dialog>
-    <dialog id="browser-copy-dialog" class="delete-dialog" aria-labelledby="browser-copy-title"><h2 id="browser-copy-title">Remove the browser copy?</h2><p>This removes only the old profile saved in this browser. Your account profile and any details currently in the form are kept.</p><div class="dialog-actions"><button id="keep-browser-copy" class="button button-secondary" type="button">Keep copy</button><button id="confirm-remove-browser-copy" class="button button-danger" type="button">Remove browser copy</button></div></dialog>
     <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-title" aria-describedby="review-description">
       <div class="review-heading"><div><p class="eyebrow">BEFORE YOU SHARE</p><h2 id="review-title" tabindex="-1">Signup review preview</h2></div><span class="status-badge">Preview only</span></div>
       <p id="review-retailer" class="review-retailer"></p><p id="review-description" class="review-description">Your saved details for a future signup. Each program will decide which fields it needs.</p>

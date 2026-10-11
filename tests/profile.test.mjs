@@ -35,19 +35,10 @@ test("invalid email, phone, future birthday, impossible date, and excess length 
   assert.deepEqual(validateProfile({ ...sample(), dateOfBirth: "2000-02-29" }, "2026-10-09").errors, {});
 });
 
-test("page-only saving removes a previously remembered copy", () => {
-  const storage = memoryStorage();
-  writeSavedProfile(storage, sample(), true);
-  assert.ok(storage.getItem(STORAGE_KEY));
-  writeSavedProfile(storage, { firstName: "Alex" }, false);
-  assert.equal(storage.getItem(STORAGE_KEY), null);
-  assert.equal(readSavedProfile(storage), null);
-});
-
-test("remembered profiles round-trip and delete only this application's key", () => {
+test("device profiles round-trip and delete only this application's key", () => {
   const storage = memoryStorage();
   storage.setItem("other-app", "untouched");
-  writeSavedProfile(storage, sample(), true, "2026-10-09T12:00:00.000Z");
+  writeSavedProfile(storage, sample(), "2026-10-09T12:00:00.000Z");
   assert.deepEqual(readSavedProfile(storage), { profile: sample(), updatedAt: "2026-10-09T12:00:00.000Z" });
   clearSavedProfile(storage);
   assert.equal(readSavedProfile(storage), null);
@@ -65,8 +56,7 @@ test("corrupted, unsupported, and invalid saved records cannot silently populate
 test("storage failures propagate instead of reporting a successful save or deletion", () => {
   const storage = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("quota"); }, removeItem() { throw new Error("blocked"); } };
   assert.throws(() => readSavedProfile(storage), /blocked/);
-  assert.throws(() => writeSavedProfile(storage, sample(), true), /quota/);
-  assert.throws(() => writeSavedProfile(storage, sample(), false), /blocked/);
+  assert.throws(() => writeSavedProfile(storage, sample()), /quota/);
   assert.throws(() => clearSavedProfile(storage), /blocked/);
 });
 
