@@ -4,8 +4,14 @@
   if (!bridge) return;
   let notified = false;
   let readyTimer;
+  let knownInput;
   const findPhone = () => document.querySelector('input[type="tel"][name="phone"]');
   const announce = () => {
+    const current = findPhone();
+    if (current !== knownInput) {
+      knownInput = current; notified = false;
+      clearTimeout(readyTimer); readyTimer = null;
+    }
     if (findPhone() && !notified && !readyTimer) {
       // Avoid filling the server-rendered input before the client form initializes.
       readyTimer = setTimeout(() => {
@@ -19,6 +25,15 @@
   bridge.onmessage = event => {
     try {
       const request = JSON.parse(event.data);
+      if (request.type === 'practice-profile' && location.hostname === 'auth.loyalty.test') {
+        const email = document.querySelector('input[name="email"]');
+        if (email) {
+          email.value = request.email || '';
+          email.dispatchEvent(new Event('input', {bubbles:true}));
+          bridge.postMessage(JSON.stringify({type:'practice-email-filled', matched:email.value === request.email && email.value.length > 0}));
+        }
+        return;
+      }
       const input = findPhone();
       if (!input) { bridge.postMessage(JSON.stringify({type:'missing'})); return; }
       if (request.type === 'focus') {

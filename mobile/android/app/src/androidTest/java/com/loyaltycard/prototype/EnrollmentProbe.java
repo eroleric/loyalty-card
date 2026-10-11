@@ -36,7 +36,7 @@ public class EnrollmentProbe extends Instrumentation {
             runOnMainSync(() -> WebViewCompat.addDocumentStartJavaScript(activity.retailer,
                 "document.addEventListener('DOMContentLoaded',()=>{let tries=0;const timer=setInterval(()=>{const b=Array.from(document.querySelectorAll('button,a')).find(el=>el.textContent.trim()==='Use necessary cookies only');if(b){b.click();clearInterval(timer);}if(++tries>120)clearInterval(timer);},500);});",
                 new HashSet<>(Arrays.asList("https://inner-circle.circlek.com", "https://auth.circlek.com"))));
-            js("document.getElementById('native-enroll').click()");
+            js("LoyaltyNative.postMessage(JSON.stringify({phone:'+1 (202) 555-0148',mode:'live'}))");
             until = System.currentTimeMillis() + 90000;
             while (System.currentTimeMillis() < until && !activity.authReady && activity.failure.isEmpty()) Thread.sleep(500);
             screenshot("circle-k-loaded.png");
@@ -56,17 +56,17 @@ public class EnrollmentProbe extends Instrumentation {
             result.putString("result", "FAIL: " + error.getMessage()); finish(1, result);
         }
     }
-    private void restoreProfile() throws Exception {
+    protected void restoreProfile() throws Exception {
         if (originalProfile == null) return;
         js("(()=>{const previous=" + originalProfile + ";if(previous===null)localStorage.removeItem('loyalty-card.profile.v1');else localStorage.setItem('loyalty-card.profile.v1',previous);return true;})()");
         require(originalProfile.equals(js("localStorage.getItem('loyalty-card.profile.v1')")), "Original profile restoration failed");
     }
-    private String js(String script) throws Exception {
+    protected String js(String script) throws Exception {
         CountDownLatch done = new CountDownLatch(1); AtomicReference<String> value = new AtomicReference<>();
         runOnMainSync(() -> activity.home.evaluateJavascript(script, response -> { value.set(response); done.countDown(); }));
         require(done.await(5, TimeUnit.SECONDS), "Profile script timed out"); return value.get();
     }
-    private void screenshot(String name) throws Exception {
+    protected void screenshot(String name) throws Exception {
         Bitmap image = getUiAutomation().takeScreenshot();
         require(image != null, "Screenshot unavailable");
         try (FileOutputStream file = new FileOutputStream(new File(activity.getExternalFilesDir(null), name))) {
@@ -74,5 +74,5 @@ public class EnrollmentProbe extends Instrumentation {
         }
         image.recycle();
     }
-    private void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
+    protected void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
 }

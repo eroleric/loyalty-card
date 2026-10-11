@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Practice form</title><link rel="stylesheet" href="practice.css"></head><body class="auth">
+<main id="step"></main><p id="message" role="alert" aria-live="polite"></p>
+<details class="test-controls"><summary>Test scenarios</summary><label for="scenario">Practice scenario</label>
+<select id="scenario"><option value="success">New member · success</option><option value="captcha">CAPTCHA handoff</option><option value="forbidden">Server refuses request · 403</option><option value="expired">Expired verification code</option><option value="existing">Existing member</option></select>
+<button id="restart" class="secondary" type="button">Restart practice</button><p>Wrong-code test: enter anything except 123456. These scenarios are simulated.</p></details>
+<script src="auth.js"></script></body></html>

@@ -1,57 +1,48 @@
-# Mobile enrollment experiment
+# Loyalty Card Android prototype
 
-This is a native Android WebView prototype, separate from the public GitHub Pages website. It bundles the existing `dist/` UI and profile code. The website remains a profile/preview prototype.
+## Current mode: offline practice
 
-## What it does
+The Android app bundles our existing profile UI and a local Circle K signup simulation. Choose **Practice Circle K signup** from the retailer card. This fills the saved phone automatically; later it fills the saved email for review. No live enrollment is opened from the home screen.
 
-1. Save a US mobile phone in My profile inside the Android app.
-2. Choose **Try assisted signup** on Circle K's card.
-3. The app opens the official `https://inner-circle.circlek.com/` enrollment page.
-4. Once its `https://auth.circlek.com/` iframe is ready, the app fills the saved phone automatically after that initial signup tap.
-5. Review the phone and handle subsequent steps yourself. **Retry phone fill** is available if needed.
+Practice sequence: phone review → optional simulated CAPTCHA → practice SMS code → new-member email/marketing/consent → simulated completion. The code is **123456**, and no text is sent. Test scenarios provide server refusal (403), expired code with resend recovery, and existing-member sign-in. An incorrect six-digit code stays on the verification screen. Marketing choices and practice consent are never selected automatically. The practice terms are local placeholder terms, not an agreement with Circle K.
 
-The adapter never submits the form, requests an SMS, fills an OTP, checks consent, or solves a CAPTCHA. It reports a successful fill only if the input still contains the expected number after the page has rerendered. This does not establish that the retailer has accepted the number or that membership was created.
+Everything is bundled in the APK: no remote fonts, scripts, analytics, assets, requests, or SMS. Android disables network loads while practice mode is active; WebView request interception serves only packaged assets and rejects everything else. Content Security Policy also disallows connections and form navigation. The mock auth form uses a separate local origin, `auth.loyalty.test`, to exercise our exact-origin bridge and the same native phone insertion path used in the earlier live test. Practice email fill is limited to that local origin. The fixture does not reproduce Circle K's full backend, React state behavior, fraud detection, or real CAPTCHA service.
 
-Only the saved phone is passed to the retailer frame. No credentials or profile are sent automatically when opening the page. Each WebView bridge is restricted to its exact origin; there is no general JavaScript interface exposed to arbitrary websites. Normal TLS checks and the standard WebView user agent remain enabled. The `circle-k-assist.js` adapter is injected using AndroidX WebKit's document-start API so it can operate inside the cross-origin authentication frame.
+The profile stays on this Android installation. It does not share the profile saved in a desktop browser. No password, payment information, or completed enrollment record is stored by practice mode. Uninstalling the app removes the Android profile.
 
-The Android profile is stored locally in its own app WebView. It does **not** automatically share the profile saved in Chrome, Safari, or the GitHub Pages site. This prototype has no cloud service, no password storage, and no enrollment confirmation tracking. Android uninstall removes its local profile.
+## Research and fidelity — October 11, 2026
 
-## Build and test
+Study used public informational pages and GET requests for the publicly served signup HTML/JavaScript. No signup/check-user POST, SMS request, or account creation was performed during this work.
 
-Requires Java 17+, Android SDK platform 36, and a compatible emulator/device. Set `ANDROID_HOME` or create ignored `android/local.properties` with `sdk.dir=...`.
+Verified sources:
+
+- [Official Inner Circle overview](https://www.circlek.com/inner-circle): US mobile number participation and website/app enrollment.
+- [Public auth entry](https://auth.circlek.com/en?appId=blt3f3321ced95bb768&bu=us): phone-first configuration, US country code, marketing options and terms configuration.
+- [Public signup component](https://auth.circlek.com/_next/static/chunks/4779.c64ac98631658c05.js): US fields are email and phone; first/last name are EU-specific; password is configuration-dependent.
+- [Public passwordless verification component](https://auth.circlek.com/_next/static/chunks/1665.24e22fd3a623a6f0.js): verification and new-versus-existing-member branches. Deployment URLs may change.
+
+The public page's actual verification component was read through its webpack mapping (component 1665); it distinguishes existing-member success from a new-user details step. The public standard OTP component (260) supports another registration path. Step order depends on server responses. Our fixture chooses the phone → verification → details path; it is not a captured successful live enrollment. The exact six-digit practice code, timeout/error triggers, CAPTCHA checkbox, and explicit practice-consent gate are simulation choices. Circle K's observed US configuration hides its terms checkboxes, so our explicit gate deliberately tests user consent rather than matching that screen pixel for pixel. No real barcode, rewards, points, or membership number is invented.
+
+Later live enrollment remains unverified. The live experiment retained a fictional phone on Android 14 and Android 17 emulators, but subsequent user attempts logged three check-user 403 responses. The cause of those refusals has not been established.
+
+## Build and verification
+
+Requires Java 17+, SDK platform 36 and a compatible Android emulator/device. Configure `ANDROID_HOME` or ignored `android/local.properties`.
 
 ```powershell
 cd mobile/android
-./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest
+./gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug
 adb -s YOUR_TEST_DEVICE install -r app/build/outputs/apk/debug/app-debug.apk
 adb -s YOUR_TEST_DEVICE install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-adb -s YOUR_TEST_DEVICE shell am instrument -w com.loyaltycard.prototype.test/com.loyaltycard.prototype.EnrollmentProbe
+adb -s YOUR_TEST_DEVICE shell am instrument -w com.loyaltycard.prototype.test/com.loyaltycard.prototype.PracticeProbe
 ```
 
-The instrumentation probe temporarily saves a reserved fictional phone through the actual profile UI, taps the signup control once, and checks the frame's reported retained value without tapping a separate fill control. It restores and verifies the original local profile afterward. It does not press Circle K's **Let's go** button. Screenshots are saved under the test app's external files directory. Run only in a test installation.
+`PracticeProbe` is the default test runner. It temporarily saves fictional phone/email through the profile UI, tests one-tap phone insertion, email fill, wrong/expired codes, resend, CAPTCHA handoff, consent gating, simulated success, existing-member and 403 scenarios. It verifies network loads are disabled and no nonlocal resource was requested, then restores and verifies the original profile. Screenshots are saved in the app's external files directory. Use a test installation. Inspect `INSTRUMENTATION_RESULT` for PASS; adb's process exit code alone does not prove success.
 
-## Scope and remaining work
+Build and lint passed; the full offline scenario test passed on the current Android emulator. Physical-device behavior is untested. This is a debug prototype.
 
-This tests the first signup step, not end-to-end enrollment. Real phone verification, CAPTCHA behavior, terms/consent, later fields, navigation, and recovery must be checked before calling enrollment working. No iOS build or App Store review has been performed. Windows can build/test Android; an iOS WKWebView implementation and a Mac/device test are still required.
+## Archived live experiment
 
-Official entry observed on October 11, 2026: [Circle K Inner Circle](https://www.circlek.com/inner-circle) links to the above enrollment site. The observed first field is `input[type="tel"][name="phone"]` within `auth.circlek.com`.
+`EnrollmentProbe` remains an explicitly named live runner for historical testing; do not run it while developing the offline fixture. It opens Circle K and verifies phone retention only, never submitting enrollment or requesting SMS. The production bridge restricts live messages to the exact auth.circlek.com origin. Normal TLS, default WebView user agent, and blocked file/content access remain enabled. Live top-level navigation outside the two signup hosts is blocked in this experiment, so its terms/privacy navigation is incomplete.
 
-Platform mechanism: [AndroidX WebViewCompat](https://developer.android.com/reference/androidx/webkit/WebViewCompat#addDocumentStartJavaScript(android.webkit.WebView,java.lang.String,java.util.Set%3Cjava.lang.String%3E)).
-
-## Verified result — October 11, 2026
-
-The instrumentation test passed on an Android 14 (API 34) emulator with Android System WebView 153.0.8010.36. The real Circle K authentication iframe retained the saved fictional number, `+1 (202) 555-0148`, and the screenshot confirmed the formatted value. No form submission, SMS request, CAPTCHA solving, or membership creation was performed. Physical Android devices and iOS remain untested.
-
-Bulk JavaScript input events and whole-number native insertion reset Circle K's field to its country prefix. The working prototype focuses the phone field through the origin-restricted adapter, then inserts digits individually through Android's public [InputConnection](https://developer.android.com/reference/android/view/inputmethod/InputConnection) API on its editor thread. It verifies the retained value afterward and offers manual entry when it cannot confirm the fill. This retailer-specific behavior may change with Circle K or WebView updates.
-
-This is a debug test app, not a production release or store-approved app. External links outside the two enrollment hosts are blocked in this experiment; terms/privacy navigation must be completed before a full enrollment release. The test-only runner chooses necessary cookies only; the production app leaves cookie choices to the user.
-
-The same non-submitting test also passed on the user's Android 17 / API 37 emulator with WebView 153.0.8010.36. Its initially empty app profile was populated with the fictional test profile; it is not a real membership. No SMS or account was requested.
-
-## Policy limitation
-
-Circle K's [Inner Circle terms](https://www.circlek.com/inner-circle/terms-and-conditions), effective August 25, 2026 and checked October 11, restrict framing or altering content, limit the license to personal non-commercial use, and restrict interference with access controls. Successful embedded form entry is technical evidence, not legal clearance for distributing this integration. Do not treat this experiment as a production enrollment connector. A lower-risk direction is opening the official external browser and letting the person use ordinary autofill or paste saved details, with explicit verification and consent. That direction still requires its own policy review and device testing.
-
-Hybrid retest on October 11: the current Android emulator again passed live Circle K phone entry without submission. The test runner now snapshots the existing local profile, restores it on success or failure, and verifies restoration. Full signup, real-device behavior, and policy clearance remain unverified.
-
-One-tap update verified October 11: Try assisted signup now authorizes opening Circle K and automatically filling the saved phone once the auth frame is ready. The live Android emulator test passed without using the retry button. Build and lint passed. No submission or verification was automated.
+Circle K's [Inner Circle terms](https://www.circlek.com/inner-circle/terms-and-conditions), effective August 25, 2026 and checked October 11, restrict framing/altering content and interference with access controls. Technical autofill success is not legal clearance, retailer acceptance, or store approval. Offline practice does not resolve those production questions. No iOS implementation or store review has been completed.

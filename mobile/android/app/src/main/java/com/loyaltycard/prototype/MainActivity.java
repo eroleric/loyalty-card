@@ -17,6 +17,8 @@ import android.widget.*;
 import androidx.webkit.*;
 import org.json.JSONObject;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,6 +26,12 @@ import java.io.ByteArrayOutputStream;
 public class MainActivity extends Activity {
     static final String HOME = "https://appassets.androidplatform.net/assets/index.html";
     static final String SIGNUP = "https://inner-circle.circlek.com/";
+    static final String PRACTICE = "https://appassets.androidplatform.net/assets/practice/index.html";
+    volatile boolean practiceMode = true;
+    String savedEmail = "";
+    volatile String practiceStage = "";
+    volatile boolean practiceEmailFilled = false;
+    volatile int blockedPracticeRequests = 0;
     WebView home, retailer;
     Button fill;
     TextView status;
@@ -73,7 +81,7 @@ public class MainActivity extends Activity {
                 return !"appassets.androidplatform.net".equals(request.getUrl().getHost());
             }
             @Override public void onPageFinished(WebView view, String url) {
-                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Try assisted signup';b.onclick=()=>{let phone='';try{phone=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile?.phone||'';}catch{} LoyaltyNative.postMessage(JSON.stringify({phone}));};const note=document.createElement('p');note.className='retailer-preview';note.textContent='Opens Circle K and fills your saved phone. Review it before continuing.';document.querySelector('.retailer-details')?.append(note,b);})()", null);
+                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Practice Circle K signup';b.onclick=()=>{let profile={};try{profile=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile||{};}catch{} LoyaltyNative.postMessage(JSON.stringify({phone:profile.phone||'',email:profile.email||'',mode:'practice'}));};const note=document.createElement('p');note.className='retailer-preview';note.textContent='Offline practice. Fills your saved phone and email; no real enrollment or text messages.';document.querySelector('.retailer-details')?.append(note,b);})()", null);
             }
         });
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER) ||
@@ -84,16 +92,26 @@ public class MainActivity extends Activity {
         WebViewCompat.addWebMessageListener(home, "LoyaltyNative", Collections.singleton("https://appassets.androidplatform.net"),
             (view, message, origin, mainFrame, reply) -> {
                 if (!mainFrame || !"appassets.androidplatform.net".equals(origin.getHost())) return;
-                try { savedPhone = normalizePhone(new JSONObject(message.getData()).optString("phone")); startEnrollment(); }
+                try { JSONObject profile = new JSONObject(message.getData()); savedPhone = normalizePhone(profile.optString("phone")); savedEmail = profile.optString("email"); practiceMode = !"live".equals(profile.optString("mode")); startEnrollment(); }
                 catch (Exception e) { failure = "Could not read the saved phone."; }
             });
-        WebViewCompat.addWebMessageListener(retailer, "CircleAssist", Collections.singleton("https://auth.circlek.com"),
+        WebViewCompat.addWebMessageListener(retailer, "CircleAssist", new HashSet<>(Arrays.asList("https://auth.circlek.com", "https://auth.loyalty.test")),
             (view, message, origin, mainFrame, reply) -> {
-                if (!"https".equals(origin.getScheme()) || !"auth.circlek.com".equals(origin.getHost())) return;
+                if (!"https".equals(origin.getScheme()) || !(practiceMode ? "auth.loyalty.test" : "auth.circlek.com").equals(origin.getHost())) return;
                 if (!enrollmentOpen) return;
                 try {
                     JSONObject event = new JSONObject(message.getData());
-                    if ("ready".equals(event.optString("type"))) {
+                    if (practiceMode && "stage".equals(event.optString("type"))) {
+                        practiceStage = event.optString("stage");
+                        if ("phone".equals(practiceStage)) { fillVerified = false; autoFillPending = !savedPhone.isEmpty(); }
+                        fill.setEnabled("phone".equals(practiceStage) && !savedPhone.isEmpty());
+                        status.setText("Offline practice · " + event.optString("label"));
+                        if ("details".equals(practiceStage)) {
+                            JSONObject request = new JSONObject(); request.put("type", "practice-profile"); request.put("email", savedEmail); reply.postMessage(request.toString());
+                        }
+                    } else if (practiceMode && "practice-email-filled".equals(event.optString("type"))) {
+                        practiceEmailFilled = event.optBoolean("matched");
+                    } else if ("ready".equals(event.optString("type"))) {
                         authReply = reply; authReady = true; fill.setEnabled(!savedPhone.isEmpty());
                         status.setText(savedPhone.isEmpty() ? "Save a US phone in My profile first. You can also type it here." : "Filling your saved phone. Review it before continuing.");
                         if (autoFillPending) { autoFillPending = false; fillSavedPhone(); }
@@ -114,13 +132,25 @@ public class MainActivity extends Activity {
                 while ((count = source.read(buffer)) != -1) bytes.write(buffer, 0, count);
             }
             String adapter = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
-            WebViewCompat.addDocumentStartJavaScript(retailer, adapter, Collections.singleton("https://auth.circlek.com"));
+            WebViewCompat.addDocumentStartJavaScript(retailer, adapter, new HashSet<>(Arrays.asList("https://auth.circlek.com", "https://auth.loyalty.test")));
         } catch (Exception e) { failure = "Adapter could not load."; }
+        WebViewAssetLoader practiceAuthAssets = new WebViewAssetLoader.Builder().setDomain("auth.loyalty.test")
+            .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
         retailer.setWebViewClient(new WebViewClient() {
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (!practiceMode) return null;
+                WebResourceResponse local = assets.shouldInterceptRequest(request.getUrl());
+                if (local == null) local = practiceAuthAssets.shouldInterceptRequest(request.getUrl());
+                if (local != null) return local;
+                blockedPracticeRequests++;
+                return new WebResourceResponse("text/plain", "UTF-8", 403, "Offline practice", Collections.emptyMap(), new java.io.ByteArrayInputStream(new byte[0]));
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (!request.isForMainFrame()) return false;
                 Uri uri = request.getUrl();
-                boolean allowed = "https".equals(uri.getScheme()) && ("inner-circle.circlek.com".equals(uri.getHost()) || "auth.circlek.com".equals(uri.getHost()));
+                boolean allowed = "https".equals(uri.getScheme()) && (practiceMode ?
+                    ("appassets.androidplatform.net".equals(uri.getHost()) || "auth.loyalty.test".equals(uri.getHost())) :
+                    ("inner-circle.circlek.com".equals(uri.getHost()) || "auth.circlek.com".equals(uri.getHost())));
                 if (!allowed) status.setText("External link stopped in this test app. Use the official Circle K browser page for it.");
                 return !allowed;
             }
@@ -141,9 +171,12 @@ public class MainActivity extends Activity {
         return digits.matches("[2-9][0-9]{9}") ? digits : "";
     }
     void startEnrollment() {
+        retailer.stopLoading();
+        retailer.getSettings().setBlockNetworkLoads(practiceMode);
+        practiceStage = ""; practiceEmailFilled = false; blockedPracticeRequests = 0;
         authReply = null; authReady = false; fillVerified = false; awaitingPhoneFocus = false; enrollmentOpen = true; autoFillPending = !savedPhone.isEmpty(); fill.setEnabled(false);
         home.setVisibility(View.GONE); retailerPanel.setVisibility(View.VISIBLE);
-        status.setText("Opening Circle K and preparing your saved phone. Review it before continuing."); retailer.loadUrl(SIGNUP);
+        status.setText(practiceMode ? "Opening offline practice. Your saved phone will fill automatically." : "Opening Circle K and preparing your saved phone. Review it before continuing."); retailer.loadUrl(practiceMode ? PRACTICE : SIGNUP);
     }
     void fillSavedPhone() {
         if (!enrollmentOpen || awaitingPhoneFocus || authReply == null || savedPhone.isEmpty()) return;
