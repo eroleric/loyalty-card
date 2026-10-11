@@ -24,7 +24,7 @@ The profile contains contact details, an optional birthday, and optional offer p
 
 No package installation or bundling is required. With Node.js installed, run `npm run dev` to preview the static files. `npm run build` checks JavaScript and confirms the files in `dist/` are ready; `npm test` checks profile validation, saving, deletion, and storage failures.
 
-The app is a browser UI prototype, not a compiled iOS or Android app. UI and styles live in `dist/index.html` and `dist/styles.css`; navigation and review behavior live in `dist/app.js`. Add retailer records in `dist/retailers.js`.
+The public app is a browser UI prototype. A separate Android WebView enrollment experiment lives under `mobile/android`; see `mobile/README.md` for its scope and testing instructions. UI and styles live in `dist/index.html` and `dist/styles.css`; navigation and review behavior live in `dist/app.js`. Add retailer records in `dist/retailers.js`.
 
 ## Publishing
 
