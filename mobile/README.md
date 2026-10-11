@@ -45,3 +45,9 @@ The instrumentation test passed on an Android 14 (API 34) emulator with Android 
 Bulk JavaScript input events and whole-number native insertion reset Circle K's field to its country prefix. The working prototype focuses the phone field through the origin-restricted adapter, then inserts digits individually through Android's public [InputConnection](https://developer.android.com/reference/android/view/inputmethod/InputConnection) API on its editor thread. It verifies the retained value afterward and offers manual entry when it cannot confirm the fill. This retailer-specific behavior may change with Circle K or WebView updates.
 
 This is a debug test app, not a production release or store-approved app. External links outside the two enrollment hosts are blocked in this experiment; terms/privacy navigation must be completed before a full enrollment release. The test-only runner chooses necessary cookies only; the production app leaves cookie choices to the user.
+
+The same non-submitting test also passed on the user's Android 17 / API 37 emulator with WebView 153.0.8010.36. Its initially empty app profile was populated with the fictional test profile; it is not a real membership. No SMS or account was requested.
+
+## Policy limitation
+
+Circle K's [Inner Circle terms](https://www.circlek.com/inner-circle/terms-and-conditions), effective August 25, 2026 and checked October 11, restrict framing or altering content, limit the license to personal non-commercial use, and restrict interference with access controls. Successful embedded form entry is technical evidence, not legal clearance for distributing this integration. Do not treat this experiment as a production enrollment connector. A lower-risk direction is opening the official external browser and letting the person use ordinary autofill or paste saved details, with explicit verification and consent. That direction still requires its own policy review and device testing.
