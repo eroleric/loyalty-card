@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f7f8f4" />
+    <meta name="theme-color" content="#f6f7f8" />
     <meta name="description" content="Loyalty Card — your favorite retailers, together in one place." />
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
@@ -13,7 +13,7 @@
     <script type="module" src="./app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to retailers</a>
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="app-header">
       <div class="header-content">
         <div class="brand">
@@ -32,64 +32,50 @@
     <main id="main" class="main-content">
       <div id="home-view">
       <section class="welcome" aria-labelledby="welcome-title">
-        <div class="welcome-copy">
-          <p class="eyebrow">A LITTLE LESS TO CARRY</p>
-          <h1 id="welcome-title">Your favorite stores.<br />One simple place.</h1>
-          <p class="welcome-description">Keep your everyday retailers close at hand.</p>
-        </div>
-        <div class="wallet-art" aria-hidden="true">
-          <div class="art-orbit"></div>
-          <div class="art-card art-card-back"><span class="art-chip"></span></div>
-          <div class="art-card art-card-front">
-            <span class="art-card-title">Loyalty Card</span>
-            <svg class="art-card-icon" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="17" rx="4"/><path d="M4 14h24M9 20h5"/></svg>
-            <div class="art-card-bottom"><span>EVERYDAY FAVORITES</span><span class="art-card-dot"></span></div>
-          </div>
-          <span class="art-spark art-spark-one">✦</span>
-          <span class="art-spark art-spark-two">✦</span>
-        </div>
+        <h1 id="welcome-title">Retailers</h1>
+        <p class="welcome-description">Save your details once. Keep your favorite retailers here.</p>
       </section>
 
       <section class="profile-callout" aria-labelledby="profile-callout-title">
-        <div class="callout-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg></div>
+
         <div class="callout-copy">
-          <div class="callout-title-row"><h2 id="profile-callout-title">Your signup profile</h2><span id="profile-badge" class="status-badge">Not set up</span></div>
-          <p id="home-profile-description">Add your details once, ready to review when you sign up.</p>
+          <div class="callout-title-row"><h2 id="profile-callout-title">Your profile</h2><span id="profile-badge" class="status-badge">Not saved yet</span></div>
+          <p id="home-profile-description">Keep your name, email, and address ready for signup forms.</p>
         </div>
-        <a id="profile-cta" class="button button-primary" href="#profile">Set up profile<span aria-hidden="true">↗</span></a>
+        <a id="profile-cta" class="button button-primary" href="#profile">Set up profile</a>
       </section>
 
       <section class="retailer-section" aria-labelledby="retailers-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow section-eyebrow">YOUR EVERYDAY STOPS</p>
-            <h2 id="retailers-title">Retailers <span id="retailer-count" class="count-badge">1</span></h2>
+
+            <h2 id="retailers-title">Available retailers <span id="retailer-count" class="count-badge">1</span></h2>
           </div>
-          <span id="retailer-summary" class="retailer-summary">1 retailer</span>
+          <span id="retailer-summary" class="sr-only">1 retailer</span>
         </div>
         <ul id="retailer-grid" class="retailer-grid" aria-label="Retailers">
           <li>
             <article class="retailer-card" style="--retailer-color: #d83632; --retailer-tint: #fbe9e7" aria-labelledby="circle-k-name">
-              <div class="retailer-cover" aria-hidden="true"><span class="cover-ring"></span><span class="cover-ring cover-ring-small"></span><span class="retailer-monogram">CK</span><span class="cover-name">Circle K</span></div>
-              <div class="retailer-details"><div class="retailer-name-row"><h3 id="circle-k-name">Circle K</h3><span class="retailer-tag">Convenience &amp; fuel</span></div><p class="retailer-program">Inner Circle</p><div class="retailer-footer"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none"><rect x="3" y="5" width="14" height="11" rx="2.5"/><path d="M3 8.5h14M6 12h3"/></svg><span>Signup not connected yet</span></div></div>
+              <div class="retailer-cover" aria-hidden="true"><span class="retailer-monogram">CK</span></div>
+              <div class="retailer-details"><h3 id="circle-k-name">Circle K</h3><p class="retailer-program">Inner Circle</p><p class="retailer-footer">Signup not connected yet</p></div>
             </article>
           </li>
         </ul>
       </section>
-      <p class="retailer-note">Start with your profile. Retailer signups will be added later.</p>
+      <p class="retailer-note">This is a preview. Retailer signup is coming later.</p>
       </div>
 
       <section id="profile-view" class="profile-view" aria-labelledby="profile-title" hidden>
         <a class="back-link" href="#home"><span aria-hidden="true">←</span> Back to retailers</a>
-        <div class="profile-page-heading"><div><p class="eyebrow">YOUR DETAILS, READY WHEN YOU ARE</p><h1 id="profile-title" tabindex="-1">One profile.<br />Fewer forms.</h1><p class="welcome-description">Save your details on this device, ready to reuse on signup forms.</p></div><span class="profile-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg></span></div>
+        <div class="profile-page-heading"><h1 id="profile-title" tabindex="-1">My profile</h1><p class="welcome-description">Your details, ready for future signup forms. Fill in what you know.</p></div>
         <noscript><p class="notice">JavaScript is needed to edit and save your profile. Your details will not be submitted by this page.</p></noscript>
         <div class="profile-layout">
           <form id="profile-form" class="profile-form" novalidate>
-            <p id="form-message" class="form-message" role="status" aria-live="polite" hidden></p>
+
             <fieldset id="profile-fields" class="profile-fields" disabled>
               <legend class="sr-only">Your signup details</legend>
               <section class="form-card" aria-labelledby="contact-title">
-                <div class="form-section-heading"><span class="section-number" aria-hidden="true">01</span><div><h2 id="contact-title">About you</h2><p>Common details used on signup forms. You can save a partial profile.</p></div></div>
+                <div class="form-section-heading"><div><h2 id="contact-title">About you</h2></div></div>
                 <div class="field-grid">
                   <div class="form-field"><label for="firstName">First name</label><input id="firstName" name="firstName" autocomplete="given-name" maxlength="100" aria-describedby="firstName-error"/><p id="firstName-error" class="field-error" hidden></p></div>
                   <div class="form-field"><label for="lastName">Last name</label><input id="lastName" name="lastName" autocomplete="family-name" maxlength="100" aria-describedby="lastName-error"/><p id="lastName-error" class="field-error" hidden></p></div>
@@ -98,7 +84,7 @@
                 </div>
               </section>
               <section class="form-card" aria-labelledby="address-title">
-                <div class="form-section-heading"><span class="section-number" aria-hidden="true">02</span><div><h2 id="address-title">Your address</h2><p>Keep an address ready for programs that ask for one.</p></div></div>
+                <div class="form-section-heading"><div><h2 id="address-title">Address</h2><p>For retailers that ask for it.</p></div></div>
                 <div class="field-grid">
                   <div class="form-field field-wide"><label for="addressLine1">Street address</label><input id="addressLine1" name="addressLine1" autocomplete="address-line1" maxlength="150" aria-describedby="addressLine1-error"/><p id="addressLine1-error" class="field-error" hidden></p></div>
                   <div class="form-field field-wide"><label for="addressLine2">Apartment, suite, etc. <span>Optional</span></label><input id="addressLine2" name="addressLine2" autocomplete="address-line2" maxlength="150" aria-describedby="addressLine2-error"/><p id="addressLine2-error" class="field-error" hidden></p></div>
@@ -108,45 +94,33 @@
                   <div class="form-field"><label for="country">Country</label><input id="country" name="country" autocomplete="country-name" maxlength="100" aria-describedby="country-error"/><p id="country-error" class="field-error" hidden></p></div>
                 </div>
               </section>
-              <section class="form-card" aria-labelledby="preferences-title">
-                <div class="form-section-heading"><span class="section-number" aria-hidden="true">03</span><div><h2 id="preferences-title">A few preferences</h2><p>Optional details. Retailers may ask for something different.</p></div></div>
-                <div class="form-field birthday-field"><label for="dateOfBirth">Birthday <span>Optional</span></label><input id="dateOfBirth" name="dateOfBirth" type="date" autocomplete="bday" aria-describedby="birthday-help dateOfBirth-error"/><p id="birthday-help" class="field-help">Some programs ask for age or birthday offers. Leave blank if you prefer.</p><p id="dateOfBirth-error" class="field-error" hidden></p></div>
+              <details class="form-card optional-details"><summary>Optional details</summary><div class="optional-content">
+
+                <div class="form-field birthday-field"><label for="dateOfBirth">Birthday <span>Optional</span></label><input id="dateOfBirth" name="dateOfBirth" type="date" autocomplete="bday" aria-describedby="birthday-help dateOfBirth-error"/><p id="birthday-help" class="field-help">For age checks or birthday offers.</p><p id="dateOfBirth-error" class="field-error" hidden></p></div>
                 <div class="preference-options">
                   <label class="check-option"><input id="emailOffers" name="emailOffers" type="checkbox"/><span>I'm interested in email offers</span></label>
                   <label class="check-option"><input id="smsOffers" name="smsOffers" type="checkbox"/><span>I'm interested in text offers</span></label>
                 </div>
-                <p class="field-help">These are preferences, not consent. You'll choose separately on each retailer's signup.</p>
-              </section>
-              <section class="form-card storage-card" aria-labelledby="storage-title">
-                <div class="form-section-heading"><span class="section-number" aria-hidden="true">04</span><div><h2 id="storage-title">Saved on this device</h2><p>Save once and your details will be here when you return in this browser.</p></div></div>
-                <p id="storage-help" class="field-help">No account needed. Clearing browser data removes your saved profile.</p>
-              </section>
-              <div class="form-actions"><button type="submit" class="button button-primary">Save on this device</button><button id="cancel-profile" type="button" class="button button-secondary">Cancel changes</button></div>
+                <p class="field-help">You'll confirm offer preferences with each retailer.</p></div></details>
+
+              <div class="save-area"><p id="form-message" class="form-message" role="status" aria-live="polite" hidden></p><p id="draft-state" class="draft-state">No changes yet.</p><div class="form-actions"><button type="submit" class="button button-primary">Save on this device</button><button id="cancel-profile" type="button" class="button button-secondary">Cancel changes</button></div></div><p class="storage-note">Saved only in this browser on this device. Clearing browser data removes it.</p>
             </fieldset>
           </form>
-          <aside class="profile-sidebar" aria-label="Profile overview">
-            <section class="overview-card" aria-labelledby="overview-title">
-              <p class="eyebrow">A HEAD START</p><h2 id="overview-title">Your profile overview</h2><p id="completion-description" class="overview-description">Fill in your common signup details.</p>
-              <div class="progress-caption"><span>Common details</span><strong id="completion-count">0 of 9</strong></div><progress id="profile-progress" max="9" value="0" aria-label="Common signup details filled in"></progress>
-              <ul id="profile-checklist" class="profile-checklist"><li>Name <span>Missing</span></li><li>Email &amp; phone <span>Missing</span></li><li>Address <span>Missing</span></li></ul>
-              <p class="overview-footnote">This is a guide, not a retailer requirement. Each program may need extra details or verification.</p>
-            </section>
-            <section class="control-card" aria-labelledby="control-title"><span class="control-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span><h2 id="control-title">You're in control</h2><p>No profile details are sent to retailers by this app. Signup connections come later, with a chance to review what you share.</p><p id="saved-profile-state" class="saved-profile-state">No saved profile yet.</p><button id="delete-profile" type="button" class="text-button danger-button" disabled>Delete saved profile</button></section>
-          </aside>
+          <div class="profile-storage"><p id="saved-profile-state">No saved profile yet.</p><button id="delete-profile" type="button" class="text-button danger-button" disabled>Delete saved profile</button></div>
         </div>
       </section>
     </main>
 
-    <footer class="app-footer"><span>Loyalty Card</span><span>Your retailers, together.</span></footer>
+    <footer class="app-footer"><span>Loyalty Card</span><span>Prototype</span></footer>
     <div id="app-notice" class="app-notice" role="status" aria-live="polite" hidden></div>
     <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description"><h2 id="delete-title">Delete your saved profile?</h2><p id="delete-description">This removes the profile from this page and any copy saved by this app in this browser.</p><div class="dialog-actions"><button id="keep-profile" class="button button-secondary" type="button">Keep profile</button><button id="confirm-delete-profile" class="button button-danger" type="button">Delete profile</button></div></dialog>
     <dialog id="review-dialog" class="review-dialog" aria-labelledby="review-title" aria-describedby="review-description">
-      <div class="review-heading"><div><p class="eyebrow">BEFORE YOU SHARE</p><h2 id="review-title" tabindex="-1">Signup review preview</h2></div><span class="status-badge">Preview only</span></div>
-      <p id="review-retailer" class="review-retailer"></p><p id="review-description" class="review-description">Your saved details for a future signup. Each program will decide which fields it needs.</p>
+      <div class="review-heading"><div><h2 id="review-title" tabindex="-1">Profile preview</h2></div><span class="status-badge">Preview only</span></div>
+      <p id="review-retailer" class="review-retailer"></p><p id="review-description" class="review-description">These are your saved details. Nothing is sent to the retailer.</p>
       <p id="review-empty" class="notice" hidden>Add a profile to preview your details. Partial profiles are welcome.</p>
       <dl id="review-details" class="review-details"></dl><p id="review-preferences" class="review-preferences" hidden></p>
-      <div class="review-boundary"><strong>Nothing is shared from this preview.</strong><p>Once signup is connected, you'll review the requested details and the retailer's terms before anything is submitted.</p></div>
-      <div class="dialog-actions"><button id="close-review" class="button button-secondary" type="button">Close preview</button><button id="edit-review-profile" class="button button-primary" type="button">Edit profile</button><button type="button" class="button button-secondary" disabled>Signup unavailable</button></div>
+      <div class="review-boundary"><strong>Nothing is shared from this preview.</strong><p>Retailer signup is not connected yet.</p></div>
+      <div class="dialog-actions"><button id="close-review" class="button button-secondary" type="button">Close preview</button><button id="edit-review-profile" class="button button-primary" type="button">Edit profile</button></div>
     </dialog>
   </body>
 </html>
