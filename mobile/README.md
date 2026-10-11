@@ -1,3 +1,7 @@
+# Current app: real Circle K website
+
+The home screen now offers **Continue with Circle K** and opens the official website, filling the saved phone once. Practice signup is removed from the user flow; the offline fixture below is archived development code. Do not run PracticeProbe against this home screen because it now opens the live flow. Duplicate start messages are ignored while enrollment is open. There are no automatic submissions, SMS requests or retries. HTTP 403/429 responses show a stop-retrying message; this does not identify the reason or guarantee absence of flags. The emulator currently has the fictional Taylor test profile; replace its phone before any real submission. Build and lint passed; full live signup/sign-in remains unverified.
+
 # Loyalty Card Android prototype
 
 ## Current mode: offline practice

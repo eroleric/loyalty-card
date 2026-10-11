@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
     static final String HOME = "https://appassets.androidplatform.net/assets/index.html";
     static final String SIGNUP = "https://inner-circle.circlek.com/";
     static final String PRACTICE = "https://appassets.androidplatform.net/assets/practice/index.html";
-    volatile boolean practiceMode = true;
+    volatile boolean practiceMode = false;
     String savedEmail = "";
     volatile String practiceStage = "";
     volatile boolean practiceEmailFilled = false;
@@ -81,7 +81,7 @@ public class MainActivity extends Activity {
                 return !"appassets.androidplatform.net".equals(request.getUrl().getHost());
             }
             @Override public void onPageFinished(WebView view, String url) {
-                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Practice Circle K signup';b.onclick=()=>{let profile={};try{profile=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile||{};}catch{} LoyaltyNative.postMessage(JSON.stringify({phone:profile.phone||'',email:profile.email||'',mode:'practice'}));};const note=document.createElement('p');note.className='retailer-preview';note.textContent='Offline practice. Fills your saved phone and email; no real enrollment or text messages.';document.querySelector('.retailer-details')?.append(note,b);})()", null);
+                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Continue with Circle K';b.onclick=()=>{let profile={};try{profile=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile||{};}catch{} LoyaltyNative.postMessage(JSON.stringify({phone:profile.phone||'',email:'',mode:'live'}));};const note=document.createElement('p');note.className='retailer-preview';note.textContent='Opens the official Circle K website and fills your saved phone. Review it, then continue with signup or sign-in.';document.querySelector('.retailer-details')?.append(note,b);})()", null);
             }
         });
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER) ||
@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
         WebViewCompat.addWebMessageListener(home, "LoyaltyNative", Collections.singleton("https://appassets.androidplatform.net"),
             (view, message, origin, mainFrame, reply) -> {
                 if (!mainFrame || !"appassets.androidplatform.net".equals(origin.getHost())) return;
-                try { JSONObject profile = new JSONObject(message.getData()); savedPhone = normalizePhone(profile.optString("phone")); savedEmail = profile.optString("email"); practiceMode = !"live".equals(profile.optString("mode")); startEnrollment(); }
+                try { JSONObject profile = new JSONObject(message.getData()); savedPhone = normalizePhone(profile.optString("phone")); savedEmail = profile.optString("email"); practiceMode = false; startEnrollment(); }
                 catch (Exception e) { failure = "Could not read the saved phone."; }
             });
         WebViewCompat.addWebMessageListener(retailer, "CircleAssist", new HashSet<>(Arrays.asList("https://auth.circlek.com", "https://auth.loyalty.test")),
@@ -154,6 +154,12 @@ public class MainActivity extends Activity {
                 if (!allowed) status.setText("External link stopped in this test app. Use the official Circle K browser page for it.");
                 return !allowed;
             }
+            @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+                if (response.getStatusCode() == 403 || response.getStatusCode() == 429) {
+                    autoFillPending = false;
+                    status.setText("Circle K refused or limited a request. Stop retrying; no automatic retry will be made.");
+                }
+            }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) { failure = "Circle K could not load: " + error.getDescription(); status.setText(failure); }
             }
@@ -171,6 +177,7 @@ public class MainActivity extends Activity {
         return digits.matches("[2-9][0-9]{9}") ? digits : "";
     }
     void startEnrollment() {
+        if (enrollmentOpen) return;
         retailer.stopLoading();
         retailer.getSettings().setBlockNetworkLoads(practiceMode);
         practiceStage = ""; practiceEmailFilled = false; blockedPracticeRequests = 0;
