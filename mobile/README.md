@@ -7,8 +7,8 @@ This is a native Android WebView prototype, separate from the public GitHub Page
 1. Save a US mobile phone in My profile inside the Android app.
 2. Choose **Try assisted signup** on Circle K's card.
 3. The app opens the official `https://inner-circle.circlek.com/` enrollment page.
-4. Once its `https://auth.circlek.com/` iframe exposes the phone input, **Fill saved phone** becomes available.
-5. Tap to fill, review the phone, and handle any subsequent steps yourself.
+4. Once its `https://auth.circlek.com/` iframe is ready, the app fills the saved phone automatically after that initial signup tap.
+5. Review the phone and handle subsequent steps yourself. **Retry phone fill** is available if needed.
 
 The adapter never submits the form, requests an SMS, fills an OTP, checks consent, or solves a CAPTCHA. It reports a successful fill only if the input still contains the expected number after the page has rerendered. This does not establish that the retailer has accepted the number or that membership was created.
 
@@ -28,7 +28,7 @@ adb -s YOUR_TEST_DEVICE install -r app/build/outputs/apk/androidTest/debug/app-d
 adb -s YOUR_TEST_DEVICE shell am instrument -w com.loyaltycard.prototype.test/com.loyaltycard.prototype.EnrollmentProbe
 ```
 
-The instrumentation probe saves a reserved fictional phone through the actual profile UI, opens the real website, taps the native fill control, and checks the frame's reported retained value. It does not press Circle K's **Let's go** button. Screenshots are saved under the test app's external files directory. Run only in a disposable emulator/test installation: the probe saves a fictional profile in that installation.
+The instrumentation probe temporarily saves a reserved fictional phone through the actual profile UI, taps the signup control once, and checks the frame's reported retained value without tapping a separate fill control. It restores and verifies the original local profile afterward. It does not press Circle K's **Let's go** button. Screenshots are saved under the test app's external files directory. Run only in a test installation.
 
 ## Scope and remaining work
 
@@ -51,3 +51,7 @@ The same non-submitting test also passed on the user's Android 17 / API 37 emula
 ## Policy limitation
 
 Circle K's [Inner Circle terms](https://www.circlek.com/inner-circle/terms-and-conditions), effective August 25, 2026 and checked October 11, restrict framing or altering content, limit the license to personal non-commercial use, and restrict interference with access controls. Successful embedded form entry is technical evidence, not legal clearance for distributing this integration. Do not treat this experiment as a production enrollment connector. A lower-risk direction is opening the official external browser and letting the person use ordinary autofill or paste saved details, with explicit verification and consent. That direction still requires its own policy review and device testing.
+
+Hybrid retest on October 11: the current Android emulator again passed live Circle K phone entry without submission. The test runner now snapshots the existing local profile, restores it on success or failure, and verifies restoration. Full signup, real-device behavior, and policy clearance remain unverified.
+
+One-tap update verified October 11: Try assisted signup now authorizes opening Circle K and automatically filling the saved phone once the auth frame is ready. The live Android emulator test passed without using the retry button. Build and lint passed. No submission or verification was automated.

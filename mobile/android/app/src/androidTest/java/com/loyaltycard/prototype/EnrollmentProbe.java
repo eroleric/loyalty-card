@@ -17,6 +17,7 @@ import java.util.Arrays;
 /** A non-submitting smoke test against the real Circle K page. Never clicks Let's go. */
 public class EnrollmentProbe extends Instrumentation {
     MainActivity activity;
+    String originalProfile;
     @Override public void onCreate(Bundle arguments) { super.onCreate(arguments); start(); }
     @Override public void onStart() {
         Bundle result = new Bundle();
@@ -26,6 +27,7 @@ public class EnrollmentProbe extends Instrumentation {
             long until = System.currentTimeMillis() + 20000;
             while (System.currentTimeMillis() < until && !"true".equals(js("!!document.getElementById('native-enroll')"))) Thread.sleep(250);
             require("true".equals(js("!!document.getElementById('native-enroll')")), "Local profile UI did not load");
+            originalProfile = js("localStorage.getItem('loyalty-card.profile.v1')");
             // Drive the real profile save UI with a reserved fictional telephone number.
             js("(()=>{location.hash='profile'; for(const [id,value] of [['firstName','Taylor'],['phone','+1 (202) 555-0148']]){const el=document.getElementById(id);el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));}document.getElementById('profile-form').requestSubmit();return document.getElementById('saved-profile-state').textContent;})()");
             require(js("document.getElementById('saved-profile-state').textContent").contains("saved on this device"), "Save failed");
@@ -40,18 +42,24 @@ public class EnrollmentProbe extends Instrumentation {
             screenshot("circle-k-loaded.png");
             require(activity.authReady, "Live auth frame not ready: " + activity.failure);
             require("2025550148".equals(activity.savedPhone), "Profile phone did not transfer correctly");
-            runOnMainSync(() -> activity.fill.performClick());
             until = System.currentTimeMillis() + 10000;
             while (System.currentTimeMillis() < until && !activity.fillVerified) Thread.sleep(200);
             screenshot("circle-k-filled.png");
-            require(activity.fillVerified, "Circle K did not retain the assisted fill: " + activity.fillDiagnostic);
+            require(activity.fillVerified, "Circle K did not retain the automatic fill after the single signup click: " + activity.fillDiagnostic);
             result.putString("result", "PASS: actual Circle K iframe loaded in Android WebView; saved fictional phone retained after assisted fill. No submission, OTP, CAPTCHA, or membership creation performed.");
             result.putString("screenshots", activity.getExternalFilesDir(null).getAbsolutePath());
+            restoreProfile();
             finish(0, result);
         } catch (Throwable error) {
             try { screenshot("circle-k-failure.png"); } catch (Exception ignored) {}
+            try { restoreProfile(); } catch (Exception restoreError) { result.putString("restoreError", restoreError.getMessage()); }
             result.putString("result", "FAIL: " + error.getMessage()); finish(1, result);
         }
+    }
+    private void restoreProfile() throws Exception {
+        if (originalProfile == null) return;
+        js("(()=>{const previous=" + originalProfile + ";if(previous===null)localStorage.removeItem('loyalty-card.profile.v1');else localStorage.setItem('loyalty-card.profile.v1',previous);return true;})()");
+        require(originalProfile.equals(js("localStorage.getItem('loyalty-card.profile.v1')")), "Original profile restoration failed");
     }
     private String js(String script) throws Exception {
         CountDownLatch done = new CountDownLatch(1); AtomicReference<String> value = new AtomicReference<>();

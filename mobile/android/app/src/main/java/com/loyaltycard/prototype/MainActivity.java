@@ -30,6 +30,7 @@ public class MainActivity extends Activity {
     JavaScriptReplyProxy authReply;
     String savedPhone = "";
     boolean awaitingPhoneFocus = false;
+    boolean autoFillPending = false;
     volatile boolean enrollmentOpen = false;
     volatile boolean authReady = false, fillVerified = false;
     volatile String failure = "";
@@ -53,14 +54,14 @@ public class MainActivity extends Activity {
         root.addView(retailerPanel, new LinearLayout.LayoutParams(-1, 0, 1));
         LinearLayout actions = new LinearLayout(this);
         Button back = new Button(this); back.setText("Back to profile");
-        fill = new Button(this); fill.setText("Fill saved phone"); fill.setEnabled(false);
+        fill = new Button(this); fill.setText("Retry phone fill"); fill.setEnabled(false);
         actions.addView(back, new LinearLayout.LayoutParams(0, -2, 1));
         actions.addView(fill, new LinearLayout.LayoutParams(0, -2, 1)); retailerPanel.addView(actions);
         status = new TextView(this); status.setPadding(20, 12, 20, 12);
         status.setTextSize(14); retailerPanel.addView(status);
         retailer = new WebView(this); configure(retailer);
         retailerPanel.addView(retailer, new LinearLayout.LayoutParams(-1, 0, 1));
-        back.setOnClickListener(v -> { enrollmentOpen = false; retailerPanel.setVisibility(View.GONE); home.setVisibility(View.VISIBLE); });
+        back.setOnClickListener(v -> { enrollmentOpen = false; autoFillPending = false; retailerPanel.setVisibility(View.GONE); home.setVisibility(View.VISIBLE); });
         fill.setOnClickListener(v -> fillSavedPhone());
         WebViewAssetLoader assets = new WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
@@ -72,7 +73,7 @@ public class MainActivity extends Activity {
                 return !"appassets.androidplatform.net".equals(request.getUrl().getHost());
             }
             @Override public void onPageFinished(WebView view, String url) {
-                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Try assisted signup';b.onclick=()=>{let phone='';try{phone=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile?.phone||'';}catch{} LoyaltyNative.postMessage(JSON.stringify({phone}));};document.querySelector('.retailer-details')?.append(b);})()", null);
+                home.evaluateJavascript("(() => { if(document.getElementById('native-enroll'))return; const b=document.createElement('button');b.id='native-enroll';b.className='button button-primary retailer-preview';b.textContent='Try assisted signup';b.onclick=()=>{let phone='';try{phone=JSON.parse(localStorage.getItem('loyalty-card.profile.v1')||'{}').profile?.phone||'';}catch{} LoyaltyNative.postMessage(JSON.stringify({phone}));};const note=document.createElement('p');note.className='retailer-preview';note.textContent='Opens Circle K and fills your saved phone. Review it before continuing.';document.querySelector('.retailer-details')?.append(note,b);})()", null);
             }
         });
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER) ||
@@ -89,11 +90,13 @@ public class MainActivity extends Activity {
         WebViewCompat.addWebMessageListener(retailer, "CircleAssist", Collections.singleton("https://auth.circlek.com"),
             (view, message, origin, mainFrame, reply) -> {
                 if (!"https".equals(origin.getScheme()) || !"auth.circlek.com".equals(origin.getHost())) return;
+                if (!enrollmentOpen) return;
                 try {
                     JSONObject event = new JSONObject(message.getData());
                     if ("ready".equals(event.optString("type"))) {
                         authReply = reply; authReady = true; fill.setEnabled(!savedPhone.isEmpty());
-                        status.setText(savedPhone.isEmpty() ? "Save a US phone in My profile first. You can also type it here." : "Circle K is ready. Tap Fill saved phone, then review it.");
+                        status.setText(savedPhone.isEmpty() ? "Save a US phone in My profile first. You can also type it here." : "Filling your saved phone. Review it before continuing.");
+                        if (autoFillPending) { autoFillPending = false; fillSavedPhone(); }
                     } else if ("focused".equals(event.optString("type")) && awaitingPhoneFocus) {
                         awaitingPhoneFocus = false;
                         retailer.postDelayed(() -> commitPhoneToFocusedEditor(), 250);
@@ -138,25 +141,26 @@ public class MainActivity extends Activity {
         return digits.matches("[2-9][0-9]{9}") ? digits : "";
     }
     void startEnrollment() {
-        authReply = null; authReady = false; fillVerified = false; awaitingPhoneFocus = false; enrollmentOpen = true; fill.setEnabled(false);
+        authReply = null; authReady = false; fillVerified = false; awaitingPhoneFocus = false; enrollmentOpen = true; autoFillPending = !savedPhone.isEmpty(); fill.setEnabled(false);
         home.setVisibility(View.GONE); retailerPanel.setVisibility(View.VISIBLE);
-        status.setText("Opening Circle K. Nothing will be submitted automatically."); retailer.loadUrl(SIGNUP);
+        status.setText("Opening Circle K and preparing your saved phone. Review it before continuing."); retailer.loadUrl(SIGNUP);
     }
     void fillSavedPhone() {
-        if (authReply == null || savedPhone.isEmpty()) return;
+        if (!enrollmentOpen || awaitingPhoneFocus || authReply == null || savedPhone.isEmpty()) return;
         fillVerified = false; fillDiagnostic = "";
         retailer.requestFocus(); awaitingPhoneFocus = true;
         try { JSONObject request = new JSONObject(); request.put("type", "focus"); authReply.postMessage(request.toString()); }
         catch (Exception e) { status.setText("Could not fill. Enter your phone manually."); }
     }
     void commitPhoneToFocusedEditor() {
+        if (!enrollmentOpen) return;
         // Native text entry triggers the same trusted editing path as the Android keyboard.
         // JavaScript focuses the known phone input; refuse non-phone native editors.
         EditorInfo editor = new EditorInfo();
         InputConnection connection = retailer.onCreateInputConnection(editor);
         if (connection == null || (editor.inputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_PHONE) {
             fillDiagnostic = "Phone editor was not focused (input type " + editor.inputType + ")";
-            status.setText("Tap the phone field, then try Fill saved phone again."); return;
+            status.setText("Tap the phone field, then try Retry phone fill."); return;
         }
         Handler editorHandler = connection.getHandler();
         if (editorHandler == null) { fillDiagnostic = "Phone editor thread unavailable"; status.setText("Enter your phone manually."); return; }
